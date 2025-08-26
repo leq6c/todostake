@@ -1,0 +1,170 @@
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
+import { LogOut, User, Shield, Key, Wallet, Copy, ExternalLink } from "lucide-react"
+
+type AccountModalProps = {}
+
+export function AccountModal() {
+  const [name, setName] = useState("John Doe")
+  const [email] = useState("john.doe@example.com")
+  const [encryptionEnabled, setEncryptionEnabled] = useState(true)
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+  const [walletConnected, setWalletConnected] = useState(true)
+  const [walletAddress] = useState("7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
+
+  const handleSignOut = () => {
+    // Handle sign out logic
+    console.log("Signing out...")
+  }
+
+  const handleConnectWallet = () => {
+    console.log("Connecting wallet...")
+    setWalletConnected(true)
+  }
+
+  const handleDisconnectWallet = () => {
+    console.log("Disconnecting wallet...")
+    setWalletConnected(false)
+  }
+
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(walletAddress)
+    console.log("Address copied to clipboard")
+  }
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Profile Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium">Profile</h4>
+        </div>
+
+        <div className="space-y-2">
+          <div>
+            <Label htmlFor="name" className="text-xs">
+              Name
+            </Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="text-sm h-8" />
+          </div>
+          <div>
+            <Label htmlFor="email" className="text-xs">
+              Email
+            </Label>
+            <Input id="email" value={email} disabled className="text-sm h-8 bg-muted" />
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Wallet Settings Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium">Wallet</h4>
+        </div>
+
+        <div className="space-y-3">
+          {walletConnected ? (
+            <>
+              <div className="space-y-2">
+                <Label className="text-xs">Connected Wallet</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={`${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}`}
+                    disabled
+                    className="text-sm h-8 bg-muted flex-1"
+                  />
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={handleCopyAddress}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => window.open(`https://solscan.io/account/${walletAddress}`, "_blank")}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-sm bg-transparent"
+                onClick={handleDisconnectWallet}
+              >
+                Disconnect Wallet
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-sm bg-transparent"
+              onClick={handleConnectWallet}
+            >
+              Connect Wallet
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Security Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium">Security</h4>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-xs">End-to-end encryption</Label>
+              <p className="text-xs text-muted-foreground">Encrypt your data locally</p>
+            </div>
+            <Switch checked={encryptionEnabled} onCheckedChange={setEncryptionEnabled} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-xs">Two-factor authentication</Label>
+              <p className="text-xs text-muted-foreground">Add extra security</p>
+            </div>
+            <Switch checked={twoFactorEnabled} onCheckedChange={setTwoFactorEnabled} />
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Actions */}
+      <div className="space-y-2">
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-sm">
+          <Key className="h-4 w-4" />
+          Change Password
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2 h-8 text-sm text-destructive hover:text-destructive"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    </div>
+  )
+}
