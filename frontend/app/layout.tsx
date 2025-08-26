@@ -7,9 +7,9 @@ import { ModalProvider } from "@/components/providers/modal-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Tasks - Clean & Simple",
-  description: "Beautiful Apple-style todo app",
-  generator: "v0.app",
+  title: "Wordbond",
+  description: "Todo app",
+  generator: "nextjs",
 }
 
 export default function RootLayout({
