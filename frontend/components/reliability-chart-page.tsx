@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Line, LineChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,54 +8,38 @@ import { PageHeader } from "@/components/ui/page-header"
 import { MobileHeader } from "@/components/ui/mobile-header"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import { useReliabilityScore } from "@/hooks/use-reliability-score"
+import { toast } from "@/hooks/use-toast"
 
 interface ReliabilityChartPageProps {
   onMenuClick?: () => void
 }
 
 export function ReliabilityChartPage({ onMenuClick }: ReliabilityChartPageProps) {
-  const { currentScore, reliabilityHistory, getScoreColor, getScoreBadge } = useReliabilityScore()
+  const { currentScore, reliabilityHistory, getScoreColor, getScoreBadge, resetMetrics } = useReliabilityScore()
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d")
-
-  const mockChartData = [
-    { date: "2024-01-01", score: 85 },
-    { date: "2024-01-02", score: 87 },
-    { date: "2024-01-03", score: 82 },
-    { date: "2024-01-04", score: 89 },
-    { date: "2024-01-05", score: 91 },
-    { date: "2024-01-06", score: 88 },
-    { date: "2024-01-07", score: 92 },
-    { date: "2024-01-08", score: 90 },
-    { date: "2024-01-09", score: 94 },
-    { date: "2024-01-10", score: 89 },
-    { date: "2024-01-11", score: 93 },
-    { date: "2024-01-12", score: 95 },
-    { date: "2024-01-13", score: 91 },
-    { date: "2024-01-14", score: 96 },
-    { date: "2024-01-15", score: 94 },
-    { date: "2024-01-16", score: 97 },
-    { date: "2024-01-17", score: 95 },
-    { date: "2024-01-18", score: 98 },
-    { date: "2024-01-19", score: 96 },
-    { date: "2024-01-20", score: 99 },
-    { date: "2024-01-21", score: 97 },
-    { date: "2024-01-22", score: 95 },
-    { date: "2024-01-23", score: 93 },
-    { date: "2024-01-24", score: 96 },
-    { date: "2024-01-25", score: 98 },
-    { date: "2024-01-26", score: 94 },
-    { date: "2024-01-27", score: 97 },
-    { date: "2024-01-28", score: 95 },
-    { date: "2024-01-29", score: 99 },
-    { date: "2024-01-30", score: 97 },
-  ]
-
-  const getFilteredHistory = () => {
+  const chartData = useMemo(() => {
     const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90
-    return mockChartData.slice(-days)
-  }
-
-  const chartData = getFilteredHistory()
+    // Map latest score per date
+    const scoreByDate = new Map<string, number>()
+    for (const entry of reliabilityHistory) {
+      if (!scoreByDate.has(entry.date)) {
+        scoreByDate.set(entry.date, entry.score)
+      }
+    }
+    const out: { date: string; score: number }[] = []
+    const today = new Date()
+    let prevScore = currentScore
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const dateStr = d.toISOString().split("T")[0]
+      const s = scoreByDate.get(dateStr)
+      const useScore = typeof s === "number" ? s : prevScore
+      out.push({ date: dateStr, score: useScore })
+      prevScore = useScore
+    }
+    return out
+  }, [reliabilityHistory, timeRange, currentScore])
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -94,7 +78,7 @@ export function ReliabilityChartPage({ onMenuClick }: ReliabilityChartPageProps)
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Score History</h3>
-              <div className="flex gap-1">
+              <div className="flex gap-1 items-center">
                 {(["7d", "30d", "90d"] as const).map((range) => (
                   <Button
                     key={range}
@@ -106,6 +90,22 @@ export function ReliabilityChartPage({ onMenuClick }: ReliabilityChartPageProps)
                     {range}
                   </Button>
                 ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2 text-destructive"
+                  onClick={async () => {
+                    if (confirm("Reset reliability metrics? This will clear history and set score to 87.")) {
+                      await resetMetrics()
+                      toast({
+                        title: "Metrics reset",
+                        description: "History cleared and score set to 87.",
+                      })
+                    }
+                  }}
+                >
+                  Reset
+                </Button>
               </div>
             </div>
 
@@ -123,7 +123,7 @@ export function ReliabilityChartPage({ onMenuClick }: ReliabilityChartPageProps)
                     }
                   />
                   <YAxis
-                    domain={[80, 100]}
+                    domain={[0, 100]}
                     axisLine={true}
                     tickLine={true}
                     tick={{ fontSize: 10, fill: "#6b7280" }}

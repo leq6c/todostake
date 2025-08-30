@@ -1,8 +1,8 @@
 import type { Todo, Routine } from "@/types"
 
 export const getTaskCompletionContext = (todo: Todo) => {
-  const hasStake = todo.stakeAmount && todo.stakeAmount > 0
-  const isOverdue = todo.dueDate && new Date() > todo.dueDate
+  const hasStake = !!(todo.stakeAmount && todo.stakeAmount > 0)
+  const isOverdue = !!(todo.dueDate && new Date() > todo.dueDate)
 
   return {
     hasStake,
@@ -11,7 +11,7 @@ export const getTaskCompletionContext = (todo: Todo) => {
 }
 
 export const getRoutineCompletionContext = (routine: Routine) => {
-  const hasStake = routine.stakeAmount && routine.stakeAmount > 0
+  const hasStake = !!(routine.stakeAmount && routine.stakeAmount > 0)
   const streakLength = routine.streak
 
   return {

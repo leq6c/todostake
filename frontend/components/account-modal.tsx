@@ -1,26 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { LogOut, User, Shield, Key, Wallet, Copy, ExternalLink } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { useProfile } from "@/hooks/use-profile"
 
 type AccountModalProps = {}
 
 export function AccountModal() {
-  const [name, setName] = useState("John Doe")
-  const [email] = useState("john.doe@example.com")
+  const { user, signOut } = useAuth()
+  const { profile, updateProfile } = useProfile()
+  const [name, setName] = useState("")
+  const email = useMemo(() => profile?.email || user?.email || (user?.isAnonymous ? "Guest" : ""), [profile, user])
   const [encryptionEnabled, setEncryptionEnabled] = useState(true)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [walletConnected, setWalletConnected] = useState(true)
   const [walletAddress] = useState("7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
+  
+  // Sync local name with profile
+  useEffect(() => {
+    if (profile?.name) setName(profile.name)
+  }, [profile?.name])
 
   const handleSignOut = () => {
-    // Handle sign out logic
-    console.log("Signing out...")
+    void signOut()
   }
 
   const handleConnectWallet = () => {
@@ -52,7 +60,13 @@ export function AccountModal() {
             <Label htmlFor="name" className="text-xs">
               Name
             </Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="text-sm h-8" />
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => name.trim() && updateProfile({ name: name.trim() })}
+              className="text-sm h-8"
+            />
           </div>
           <div>
             <Label htmlFor="email" className="text-xs">

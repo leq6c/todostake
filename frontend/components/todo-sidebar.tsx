@@ -11,6 +11,7 @@ import { useTheme } from "@/components/theme-provider"
 import { useModal } from "@/components/providers/modal-provider"
 import type { TodoList, TodoCounts } from "@/types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/use-auth"
 
 interface TodoSidebarProps {
   activeList: string
@@ -34,6 +35,7 @@ export function TodoSidebar({
   const { showModal } = useModal()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const { user } = useAuth()
 
   useEffect(() => {
     setMounted(true)
@@ -106,11 +108,13 @@ export function TodoSidebar({
           onClick={handleAccountClick}
         >
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-foreground text-background font-medium text-sm">JD</AvatarFallback>
+            <AvatarFallback className="bg-foreground text-background font-medium text-sm">
+              {(user?.displayName || user?.email || "U").slice(0, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sidebar-foreground truncate text-sm">John Doe</p>
-            <p className="text-xs text-muted-foreground truncate">john.doe@example.com</p>
+            <p className="font-medium text-sidebar-foreground truncate text-sm">{user?.displayName || (user?.isAnonymous ? "Guest" : "User")}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.isAnonymous ? "Guest" : user?.email || "Signed in"}</p>
           </div>
         </div>
       </div>

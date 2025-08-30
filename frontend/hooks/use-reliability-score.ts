@@ -1,49 +1,71 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import type { ReliabilityEntry } from "@/types"
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/use-auth"
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  setDoc,
+  addDoc,
+  limit,
+  writeBatch,
+} from "firebase/firestore"
 
 export function useReliabilityScore() {
-  const [reliabilityHistory, setReliabilityHistory] = useState<ReliabilityEntry[]>([
-    {
-      date: "2025-08-20",
-      score: 85,
-      change: -2,
-      reason: "Missed routine: Morning Exercise",
-    },
-    {
-      date: "2025-08-21",
-      score: 87,
-      change: +2,
-      reason: "Completed all daily tasks",
-    },
-    {
-      date: "2025-08-22",
-      score: 89,
-      change: +2,
-      reason: "Maintained streak: Meditate",
-    },
-    {
-      date: "2025-08-23",
-      score: 87,
-      change: -2,
-      reason: "Late completion: Review quarterly reports",
-    },
-    {
-      date: "2025-08-24",
-      score: 90,
-      change: +3,
-      reason: "Perfect day: All tasks and routines completed",
-    },
-    {
-      date: "2025-08-25",
-      score: 87,
-      change: -3,
-      reason: "Missed deadline: Prepare presentation slides",
-    },
-  ])
-
+  const { user } = useAuth()
+  const [reliabilityHistory, setReliabilityHistory] = useState<ReliabilityEntry[]>([])
   const [currentScore, setCurrentScore] = useState(87)
+
+  const currentRef = useMemo(() => (user ? doc(db, "users", user.uid, "metrics", "current") : null), [user])
+  const historyCol = useMemo(
+    () => (user ? collection(db, "users", user.uid, "metrics", "current", "history") : null),
+    [user],
+  )
+
+  useEffect(() => {
+    if (!user || !currentRef || !historyCol) {
+      setReliabilityHistory([])
+      setCurrentScore(87)
+      return
+    }
+
+    // Ensure current doc exists
+    getDoc(currentRef).then(async (snap) => {
+      if (!snap.exists()) {
+        await setDoc(currentRef, { score: 87, updatedAt: serverTimestamp() })
+      }
+    })
+
+    const unsubCurrent = onSnapshot(currentRef, (snap) => {
+      const score = (snap.data() as any)?.score
+      if (typeof score === "number") setCurrentScore(score)
+    })
+
+    // pull last 180 entries by createdAt desc
+    const q = query(historyCol, orderBy("createdAt", "desc"), limit(180))
+    const unsubHistory = onSnapshot(q, (snap) => {
+      const list: ReliabilityEntry[] = []
+      snap.forEach((d) => {
+        const data = d.data() as any
+        list.push({ date: data.date, score: data.score, change: data.change, reason: data.reason })
+      })
+      setReliabilityHistory(list)
+    })
+
+    return () => {
+      unsubCurrent()
+      unsubHistory()
+    }
+  }, [user, currentRef, historyCol])
 
   const calculateScoreChange = useCallback(
     (
@@ -78,26 +100,41 @@ export function useReliabilityScore() {
   )
 
   const updateReliabilityScore = useCallback(
-    (
+    async (
       action: "complete_task" | "miss_task" | "complete_routine" | "miss_routine" | "break_streak",
       reason: string,
       context?: { hasStake?: boolean; isOverdue?: boolean; streakLength?: number },
     ) => {
+      if (!user || !currentRef || !historyCol) return
       const change = calculateScoreChange(action, context)
-      const newScore = Math.max(0, Math.min(100, currentScore + change))
+      const dateStr = new Date().toISOString().split("T")[0]
 
-      const newEntry: ReliabilityEntry = {
-        date: new Date().toISOString().split("T")[0],
-        score: newScore,
-        change,
-        reason,
-      }
-
-      setCurrentScore(newScore)
-      setReliabilityHistory((prev) => [newEntry, ...prev.slice(0, 29)]) // Keep last 30 entries
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(currentRef)
+        const prevScore = (snap.exists() ? (snap.data() as any).score : 87) as number
+        const newScore = Math.max(0, Math.min(100, prevScore + change))
+        tx.set(currentRef, { score: newScore, updatedAt: serverTimestamp() }, { merge: true })
+        const entryRef = doc(historyCol)
+        tx.set(entryRef, {
+          date: dateStr,
+          score: newScore,
+          change,
+          reason,
+          createdAt: serverTimestamp(),
+        })
+      })
     },
-    [currentScore, calculateScoreChange],
+    [user, currentRef, historyCol, calculateScoreChange],
   )
+
+  const resetMetrics = useCallback(async () => {
+    if (!user || !currentRef || !historyCol) return
+    const snap = await getDocs(historyCol)
+    const batch = writeBatch(db)
+    snap.forEach((d) => batch.delete(d.ref))
+    batch.set(currentRef, { score: 87, updatedAt: serverTimestamp() }, { merge: true })
+    await batch.commit()
+  }, [user, currentRef, historyCol])
 
   const getScoreColor = useCallback((score: number): string => {
     if (score >= 90) return "text-green-600"
@@ -122,5 +159,6 @@ export function useReliabilityScore() {
     calculateScoreChange,
     getScoreColor,
     getScoreBadge,
+    resetMetrics,
   }
 }

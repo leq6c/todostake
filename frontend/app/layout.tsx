@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ModalProvider } from "@/components/providers/modal-provider"
+import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -30,7 +31,10 @@ html {
       </head>
       <body className="antialiased">
         <ThemeProvider>
-          <ModalProvider>{children}</ModalProvider>
+          <ModalProvider>
+            {children}
+            <Toaster />
+          </ModalProvider>
         </ThemeProvider>
       </body>
     </html>

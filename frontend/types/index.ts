@@ -6,8 +6,11 @@ export interface Todo {
   list: string
   stakeAmount?: number
   stakeCurrency?: string // Added stakeCurrency property for currency selection
-  dueDate?: Date
+  dueDate?: Date | null
   starred?: boolean // Added starred property for star functionality
+  memo?: string
+  proverInstructions?: string
+  todayAddedOn?: string // ISO date string when user adds it to "Today" (separate from dueDate)
 }
 
 export interface TodoList {
@@ -20,6 +23,8 @@ export interface Routine {
   id: string
   name: string
   type: "daily" | "weekly" | "monthly"
+  createdAt?: Date
+  description?: string
   streak: number
   maxStreak: number
   completedDates: string[]

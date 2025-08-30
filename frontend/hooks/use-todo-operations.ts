@@ -1,125 +1,208 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { Todo, TodoList } from "@/types"
 import { useReliabilityScore } from "@/hooks/use-reliability-score"
 import { getTaskCompletionContext, generateReliabilityReason } from "@/utils/reliability-helpers"
+import { db } from "@/lib/firebase"
+import { todoConverter, listConverter } from "@/lib/converters"
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  where,
+  serverTimestamp,
+  Timestamp,
+  writeBatch,
+} from "firebase/firestore"
+import { useAuth } from "@/hooks/use-auth"
+import { toast } from "@/hooks/use-toast"
 
 export function useTodoOperations() {
+  const { user } = useAuth()
   const { updateReliabilityScore } = useReliabilityScore()
 
-  const [todos, setTodos] = useState<Todo[]>([
-    {
-      id: "1",
-      text: "Review quarterly reports",
-      completed: false,
-      createdAt: new Date(),
-      list: "today",
-      starred: false, // Added starred property to mock data
-    },
-    {
-      id: "2",
-      text: "Call client about project updates",
-      completed: true,
-      createdAt: new Date(),
-      list: "today",
-      starred: true, // Added starred property to mock data
-    },
-    {
-      id: "3",
-      text: "Prepare presentation slides",
-      completed: false,
-      createdAt: new Date(),
-      list: "planned",
-      starred: false, // Added starred property to mock data
-    },
-  ])
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [customLists, setCustomLists] = useState<TodoList[]>([])
 
-  const [customLists, setCustomLists] = useState<TodoList[]>([
-    { id: "work", name: "Work", color: "bg-blue-500" },
-    { id: "personal", name: "Personal", color: "bg-green-500" },
-    { id: "shopping", name: "Shopping", color: "bg-purple-500" },
-  ])
+  // Helpers
+  const userTodosCol = useMemo(
+    () => (user ? collection(db, "users", user.uid, "todos").withConverter(todoConverter) : null),
+    [user],
+  )
+  const userListsCol = useMemo(
+    () => (user ? collection(db, "users", user.uid, "lists").withConverter(listConverter) : null),
+    [user],
+  )
 
-  const addTodo = (text: string, activeList: string) => {
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      text,
-      completed: false,
-      createdAt: new Date(),
-      list: activeList,
-      starred: false, // Added default starred value for new todos
+  const fromFirestoreTodo = useCallback((id: string, data: any): Todo => {
+    const createdAt: Date = data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date()
+    const dueDate: Date | undefined = data.dueDate instanceof Timestamp ? data.dueDate.toDate() : undefined
+    return {
+      id,
+      text: data.text,
+      completed: !!data.completed,
+      createdAt,
+      list: data.list || "tasks",
+      dueDate,
+      starred: !!data.starred,
+      stakeAmount: data.stakeAmount,
+      stakeCurrency: data.stakeCurrency,
     }
-    setTodos((prev) => [...prev, newTodo])
-  }
+  }, [])
 
-  const toggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((todo) => {
-        if (todo.id === id) {
-          const updatedTodo = { ...todo, completed: !todo.completed }
-
-          const context = getTaskCompletionContext(updatedTodo)
-          const action = updatedTodo.completed ? "complete_task" : "miss_task"
-          const reason = generateReliabilityReason(action, updatedTodo.text, context)
-
-          updateReliabilityScore(action, reason, context)
-
-          return updatedTodo
-        }
-        return todo
-      }),
-    )
-  }
-
-  const deleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id))
-  }
-
-  const updateTodo = (id: string, updates: Partial<Todo>) => {
-    setTodos((prev) => prev.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo)))
-  }
-
-  const toggleStar = (id: string) => {
-    setTodos((prev) => prev.map((todo) => (todo.id === id ? { ...todo, starred: !todo.starred } : todo)))
-  }
-
-  const addCustomList = (name: string, color: string) => {
-    const newList: TodoList = {
-      id: name.toLowerCase().replace(/\s+/g, "-"),
-      name,
-      color,
+  useEffect(() => {
+    if (!user || !userTodosCol || !userListsCol) {
+      setTodos([])
+      setCustomLists([])
+      return
     }
-    setCustomLists((prev) => [...prev, newList])
-  }
 
-  const deleteCustomList = (id: string) => {
-    setCustomLists((prev) => prev.filter((list) => list.id !== id))
-    // Also remove todos that belong to this list
-    setTodos((prev) => prev.filter((todo) => todo.list !== id))
-  }
-
-  const getFilteredTodos = (activeList: string) => {
-    return todos.filter((todo) => {
-      if (activeList === "today") {
-        const today = new Date()
-        return todo.createdAt.toDateString() === today.toDateString()
-      }
-      if (activeList === "planned") {
-        return !todo.completed
-      }
-      if (activeList === "tasks") {
-        return true
-      }
-      return todo.list === activeList
+    const unsubTodos = onSnapshot(query(userTodosCol), (snap) => {
+      const next: Todo[] = []
+      snap.forEach((d) => next.push(d.data()))
+      setTodos(next)
     })
-  }
 
-  const getTodoCounts = () => ({
-    today: todos.filter((t) => t.createdAt.toDateString() === new Date().toDateString()).length,
-    planned: todos.filter((t) => !t.completed).length,
-    tasks: todos.length,
-  })
+    const unsubLists = onSnapshot(query(userListsCol), (snap) => {
+      const next: TodoList[] = []
+      snap.forEach((d) => {
+        if (d.id === "__seeded") return
+        next.push(d.data())
+      })
+      setCustomLists(next)
+    })
+
+    return () => {
+      unsubTodos()
+      unsubLists()
+    }
+  }, [user, userTodosCol, userListsCol, fromFirestoreTodo])
+
+  const addTodo = useCallback(
+    async (text: string, activeList: string) => {
+      if (!user || !userTodosCol) return
+      const payload = {
+        text,
+        completed: false,
+        createdAt: serverTimestamp(),
+        list: activeList,
+        starred: false,
+      }
+      await addDoc(userTodosCol, payload as any)
+      toast({ title: "Task added" })
+    },
+    [user, userTodosCol],
+  )
+
+  const toggleTodo = useCallback(
+    async (id: string) => {
+      if (!user || !userTodosCol) return
+      const current = todos.find((t) => t.id === id)
+      if (!current) return
+      const newCompleted = !current.completed
+      await updateDoc(doc(userTodosCol, id), { completed: newCompleted })
+
+      // Update reliability score (frontend only)
+      const updatedTemp = { ...current, completed: newCompleted }
+      const context = getTaskCompletionContext(updatedTemp)
+      const action = newCompleted ? "complete_task" : "miss_task"
+      const reason = generateReliabilityReason(action, updatedTemp.text, context)
+      updateReliabilityScore(action, reason, context)
+    },
+    [user, userTodosCol, todos, updateReliabilityScore],
+  )
+
+  const deleteTodo = useCallback(
+    async (id: string) => {
+      if (!user || !userTodosCol) return
+      await deleteDoc(doc(userTodosCol, id))
+      toast({ title: "Task deleted" })
+    },
+    [user, userTodosCol],
+  )
+
+  const updateTodo = useCallback(
+    async (id: string, updates: Partial<Todo>) => {
+      if (!user || !userTodosCol) return
+      const toUpdate: Record<string, any> = { ...updates }
+      if (updates.dueDate instanceof Date || updates.dueDate === null) {
+        toUpdate.dueDate = updates.dueDate ? Timestamp.fromDate(updates.dueDate) : null
+      }
+      if (updates.createdAt instanceof Date) {
+        toUpdate.createdAt = Timestamp.fromDate(updates.createdAt)
+      }
+      await updateDoc(doc(userTodosCol, id), toUpdate)
+    },
+    [user, userTodosCol],
+  )
+
+  const toggleStar = useCallback(
+    async (id: string) => {
+      if (!user || !userTodosCol) return
+      const current = todos.find((t) => t.id === id)
+      if (!current) return
+      await updateDoc(doc(userTodosCol, id), { starred: !current.starred })
+    },
+    [user, userTodosCol, todos],
+  )
+
+  const addCustomList = useCallback(
+    async (name: string, color: string) => {
+      if (!user || !userListsCol) return
+      const id = name.toLowerCase().replace(/\s+/g, "-")
+      await setDoc(doc(userListsCol, id), { id, name, color })
+      toast({ title: "List created", description: name })
+    },
+    [user, userListsCol],
+  )
+
+  const deleteCustomList = useCallback(
+    async (id: string) => {
+      if (!user || !userListsCol || !userTodosCol) return
+      // Delete todos that belong to this list then the list doc
+      const qy = query(userTodosCol, where("list", "==", id))
+      const batch = writeBatch(db)
+      const { getDocs } = await import("firebase/firestore")
+      const snap = await getDocs(qy)
+      snap.forEach((d) => batch.delete(d.ref))
+      batch.delete(doc(userListsCol, id))
+      await batch.commit()
+      toast({ title: "List deleted" })
+    },
+    [user, userListsCol, userTodosCol],
+  )
+
+  // Seed default lists once for new users
+  useEffect(() => {
+    if (!user || !userListsCol) return
+    let done = false
+    const seed = async () => {
+      try {
+        const seededRef = doc(collection(db, "users", user.uid, "lists"), "__seeded")
+        const { getDoc, getDocs } = await import("firebase/firestore")
+        const seededSnap = await getDoc(seededRef)
+        if (seededSnap.exists()) return
+        const listsSnap = await getDocs(query(userListsCol))
+        if (listsSnap.empty) {
+          await setDoc(doc(userListsCol, "work"), { id: "work", name: "Work", color: "bg-blue-500" })
+          await setDoc(doc(userListsCol, "personal"), { id: "personal", name: "Personal", color: "bg-green-500" })
+          await setDoc(seededRef, { at: serverTimestamp() })
+        }
+      } catch {
+        // ignore seeding errors
+      }
+    }
+    if (!done) {
+      done = true
+      void seed()
+    }
+  }, [user, userListsCol])
 
   return {
     todos,
@@ -131,7 +214,5 @@ export function useTodoOperations() {
     toggleStar,
     addCustomList,
     deleteCustomList,
-    getFilteredTodos,
-    getTodoCounts,
   }
 }

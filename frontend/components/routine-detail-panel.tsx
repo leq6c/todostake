@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,16 @@ import { CircularCheckbox } from "@/components/ui/circular-checkbox"
 import { StreakVisualization } from "@/components/ui/streak-visualization"
 import { StakeSection } from "@/components/ui/stake-section"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { Routine, StreakData } from "@/types"
 
 interface RoutineDetailPanelProps {
@@ -39,7 +49,7 @@ export function RoutineDetailPanel({
 }: RoutineDetailPanelProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(routine?.name || "")
-  const [description, setDescription] = useState("")
+  const [description, setDescription] = useState(routine?.description || "")
   const [stakeAmount, setStakeAmount] = useState("")
   const [maxAbsence, setMaxAbsence] = useState("")
   const [showProverModal, setShowProverModal] = useState(false)
@@ -48,6 +58,11 @@ export function RoutineDetailPanel({
   const [showReasonModal, setShowReasonModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteModalPosition, setDeleteModalPosition] = useState({ x: 0, y: 0 })
+
+  // Keep description in sync with selected routine; call hook unconditionally
+  useEffect(() => {
+    setDescription(routine?.description || "")
+  }, [routine?.id, routine?.description])
 
   if (!routine) {
     return (
@@ -67,7 +82,7 @@ export function RoutineDetailPanel({
   }
 
   const handleSaveDescription = () => {
-    onUpdate(routine.id, { proverInstructions: description })
+    onUpdate(routine.id, { description })
   }
 
   const handleStakeSubmit = (amount: number, currency: string) => {
@@ -82,9 +97,8 @@ export function RoutineDetailPanel({
     setMaxAbsence("")
   }
 
-  const handleAddProverInstructions = (e: React.MouseEvent) => {
-    const rect = (e.target as HTMLElement).getBoundingClientRect()
-    setModalPosition({ x: rect.left, y: rect.bottom })
+  const handleAddProverInstructions = () => {
+    setModalPosition({ x: 0, y: 0 })
     setShowProverModal(true)
   }
 
@@ -93,16 +107,14 @@ export function RoutineDetailPanel({
     setShowProverModal(false)
   }
 
-  const handleStopRoutine = (e: React.MouseEvent) => {
-    const rect = (e.target as HTMLElement).getBoundingClientRect()
-    setModalPosition({ x: rect.left, y: rect.bottom })
+  const handleStopRoutine = () => {
+    setModalPosition({ x: 0, y: 0 })
     setReasonAction("stop")
     setShowReasonModal(true)
   }
 
-  const handlePauseRoutine = (e: React.MouseEvent) => {
-    const rect = (e.target as HTMLElement).getBoundingClientRect()
-    setModalPosition({ x: rect.left, y: rect.bottom })
+  const handlePauseRoutine = () => {
+    setModalPosition({ x: 0, y: 0 })
     setReasonAction("pause")
     setShowReasonModal(true)
   }
@@ -117,9 +129,7 @@ export function RoutineDetailPanel({
     onClose()
   }
 
-  const handleDeleteClick = (event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    setDeleteModalPosition({ x: rect.left, y: rect.bottom })
+  const handleDeleteClick = () => {
     setShowDeleteModal(true)
   }
 
@@ -129,27 +139,31 @@ export function RoutineDetailPanel({
   }
 
   const calculateAbsenceStreak = () => {
-    if (!routine.completedDates.length) return 0
-
+    const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
     const today = new Date()
     let absenceCount = 0
-
-    for (let i = 0; i < 30; i++) {
+    // Count back from today until we hit a completion or creation date
+    for (let i = 0; ; i++) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
+      if (date < start) break
       const dateString = date.toISOString().split("T")[0]
-
-      if (routine.completedDates.includes(dateString)) {
-        break
-      }
+      if (routine.completedDates.includes(dateString)) break
       absenceCount++
     }
-
     return absenceCount
   }
 
   const currentAbsence = calculateAbsenceStreak()
-  const isMaxAbsenceExceeded = routine.maxAbsence && currentAbsence >= routine.maxAbsence
+  const daysSinceStart = (() => {
+    const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
+    const today = new Date()
+    const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    return Math.max(0, Math.floor((todayOnly.getTime() - startOnly.getTime()) / (1000 * 60 * 60 * 24)))
+  })()
+  const canExceed = typeof routine.maxAbsence === "number" ? daysSinceStart > routine.maxAbsence : false
+  const isMaxAbsenceExceeded = !!routine.maxAbsence && canExceed && currentAbsence >= routine.maxAbsence
 
   const getTypeIcon = () => {
     switch (type) {
@@ -166,6 +180,7 @@ export function RoutineDetailPanel({
     const data: StreakData[] = []
     const today = new Date()
     const daysToShow = type === "daily" ? 30 : type === "weekly" ? 12 : 6
+    const start = routine.createdAt ? new Date(routine.createdAt) : new Date(today)
 
     for (let i = daysToShow - 1; i >= 0; i--) {
       const date = new Date(today)
@@ -176,7 +191,7 @@ export function RoutineDetailPanel({
       } else {
         date.setMonth(date.getMonth() - i)
       }
-
+      // Always render a full window for design; absence logic uses createdAt separately
       const dateString = date.toISOString().split("T")[0]
       const isCompleted = routine.completedDates.includes(dateString)
 
@@ -189,19 +204,33 @@ export function RoutineDetailPanel({
   const isCompletedToday = routine.completedDates.includes(today)
   const streakData = generateStreakData()
 
+  const getSuccessRate = () => {
+    const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
+    const todayDate = new Date()
+    if (type === "daily") {
+      const daysSince = Math.max(1, Math.ceil((todayDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+      return Math.round((routine.completedDates.length / daysSince) * 100)
+    } else if (type === "weekly") {
+      const weeksSince = Math.max(1, Math.ceil((todayDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7)))
+      // Approximate: count unique ISO week numbers
+      const uniqueWeeks = new Set(routine.completedDates.map((d) => d.slice(0, 7)))
+      return Math.round((uniqueWeeks.size / weeksSince) * 100)
+    } else {
+      const monthsSince = Math.max(1, (todayDate.getFullYear() - start.getFullYear()) * 12 + (todayDate.getMonth() - start.getMonth()) + 1)
+      const uniqueMonths = new Set(routine.completedDates.map((d) => d.slice(0, 7)))
+      return Math.round((uniqueMonths.size / monthsSince) * 100)
+    }
+  }
+
   const statsData = [
     { label: "Total Completed", value: routine.completedDates.length },
-    {
-      label: "Success Rate",
-      value: routine.completedDates.length > 0 ? Math.round((routine.completedDates.length / 30) * 100) : 0,
-      suffix: "%",
-    },
+    { label: "Success Rate", value: getSuccessRate(), suffix: "%" },
   ]
 
   return (
     <DetailPanelLayout
       onClose={onClose}
-      onDelete={handleDeleteClick}
+      onDelete={() => handleDeleteClick()}
       footerContent={`${routine.completedDates.length} completions`}
     >
       <div className="flex items-center gap-3">
@@ -220,7 +249,7 @@ export function RoutineDetailPanel({
           <span className="text-xs capitalize">{type}</span>
         </div>
 
-        {isMaxAbsenceExceeded && <AlertTriangle className="h-4 w-4 text-red-500" title="Maximum absence exceeded" />}
+        {isMaxAbsenceExceeded && <AlertTriangle className="h-4 w-4 text-red-500" />}
       </div>
 
       {/* Title Edit */}
@@ -388,6 +417,7 @@ export function RoutineDetailPanel({
           isOpen={showProverModal}
           onClose={() => setShowProverModal(false)}
           position={modalPosition}
+          title="Prover Instructions"
           arrowPosition="right-bottom"
           onSubmit={handleProverSubmit}
           initialMessage="Define specific conditions to prove you completed this routine. What evidence should you provide?"
@@ -400,6 +430,7 @@ export function RoutineDetailPanel({
           isOpen={showReasonModal}
           onClose={() => setShowReasonModal(false)}
           position={modalPosition}
+          title="Provide a reason"
           arrowPosition="right-top"
           onSubmit={handleReasonSubmit}
           initialMessage={`Why are you ${reasonAction === "stop" ? "stopping" : "pausing"} this routine? This will help you understand your patterns.`}
@@ -407,16 +438,25 @@ export function RoutineDetailPanel({
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <ConfirmationModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleConfirmDelete}
-          position={deleteModalPosition}
-          title="Delete Routine"
-          description="Are you sure you want to delete this routine? All progress and streak data will be lost."
-        />
-      )}
+      <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Routine</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this routine? All progress and streak data will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DetailPanelLayout>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, AlertTriangle } from "lucide-react"
@@ -11,21 +11,11 @@ import { CircularCheckbox } from "@/components/ui/circular-checkbox"
 import { StakeBadge } from "@/components/ui/stake-badge"
 import { StreakVisualization } from "@/components/ui/streak-visualization"
 import { MobileHeader } from "@/components/ui/mobile-header"
-import type { StreakData } from "@/types"
+import type { StreakData, Routine } from "@/types"
+import { useRoutineOperations } from "@/hooks/use-routine-operations"
+import { Skeleton } from "@/components/ui/skeleton"
 
-interface RoutineTask {
-  id: string
-  name: string
-  streak: number
-  maxStreak: number
-  completedDates: string[]
-  lastCompleted?: string
-  description?: string
-  stakeAmount?: number
-  stopped?: boolean
-  paused?: boolean
-  maxAbsence?: number
-}
+// Uses shared Routine type backed by Firestore
 
 interface RoutinePageProps {
   type: "daily" | "weekly" | "monthly"
@@ -35,161 +25,21 @@ interface RoutinePageProps {
 }
 
 export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuClick }: RoutinePageProps) {
-  const [routines, setRoutines] = useState<RoutineTask[]>([
-    {
-      id: "1",
-      name: "Morning Exercise",
-      streak: 7,
-      maxStreak: 12,
-      completedDates: [
-        "2025-08-14",
-        "2025-08-15",
-        "2025-08-16",
-        "2025-08-17",
-        "2025-08-19",
-        "2025-08-20",
-        "2025-08-21",
-        "2025-08-22",
-        "2025-08-24",
-      ],
-      lastCompleted: "2025-08-24",
-      description: "30 minutes of cardio and strength training",
-      stakeAmount: 50,
-    },
-    {
-      id: "2",
-      name: "Read 30 minutes",
-      streak: 3,
-      maxStreak: 8,
-      completedDates: [
-        "2025-08-10",
-        "2025-08-11",
-        "2025-08-14",
-        "2025-08-15",
-        "2025-08-16",
-        "2025-08-18",
-        "2025-08-21",
-        "2025-08-23",
-        "2025-08-24",
-      ],
-      lastCompleted: "2025-08-24",
-      description: "Read books or articles for personal development",
-      stakeAmount: 25,
-    },
-    {
-      id: "3",
-      name: "Meditate",
-      streak: 0,
-      maxStreak: 5,
-      completedDates: ["2025-08-05", "2025-08-06", "2025-08-08", "2025-08-15"],
-      description: "10 minutes of mindfulness meditation",
-      maxAbsence: 3,
-    },
-    {
-      id: "4",
-      name: "Drink 8 glasses of water",
-      streak: 14,
-      maxStreak: 14,
-      completedDates: [
-        "2025-08-11",
-        "2025-08-12",
-        "2025-08-13",
-        "2025-08-14",
-        "2025-08-15",
-        "2025-08-16",
-        "2025-08-17",
-        "2025-08-18",
-        "2025-08-19",
-        "2025-08-20",
-        "2025-08-21",
-        "2025-08-22",
-        "2025-08-23",
-        "2025-08-24",
-      ],
-      lastCompleted: "2025-08-24",
-      description: "Stay hydrated throughout the day",
-      stakeAmount: 100,
-    },
-    {
-      id: "5",
-      name: "Learn Spanish",
-      streak: 0,
-      maxStreak: 15,
-      completedDates: ["2025-07-10", "2025-07-11", "2025-07-12"],
-      lastCompleted: "2025-07-12",
-      description: "Practice Spanish for 20 minutes daily",
-      stopped: true,
-      stakeAmount: 30,
-    },
-  ])
+  const { routines, addRoutine, toggleRoutine, loading } = useRoutineOperations()
 
   const [newRoutineName, setNewRoutineName] = useState("")
   const [showStoppedRoutines, setShowStoppedRoutines] = useState(false)
 
-  const addRoutine = () => {
+  const handleAddRoutine = () => {
     if (newRoutineName.trim()) {
-      const newRoutine: RoutineTask = {
-        id: Date.now().toString(),
-        name: newRoutineName.trim(),
-        streak: 0,
-        maxStreak: 0,
-        completedDates: [],
-      }
-      setRoutines([...routines, newRoutine])
+      addRoutine(newRoutineName.trim(), type)
       setNewRoutineName("")
     }
   }
 
-  const toggleRoutine = (id: string) => {
-    const today = new Date().toISOString().split("T")[0]
-    setRoutines(
-      routines.map((routine) => {
-        if (routine.id === id) {
-          const isCompletedToday = routine.completedDates.includes(today)
-          if (isCompletedToday) {
-            return {
-              ...routine,
-              streak: Math.max(0, routine.streak - 1),
-              completedDates: routine.completedDates.filter((date) => date !== today),
-              lastCompleted:
-                routine.completedDates.length > 1
-                  ? routine.completedDates[routine.completedDates.length - 2]
-                  : undefined,
-            }
-          } else {
-            const newStreak = routine.streak + 1
-            return {
-              ...routine,
-              streak: newStreak,
-              maxStreak: Math.max(routine.maxStreak, newStreak),
-              completedDates: [...routine.completedDates, today],
-              lastCompleted: today,
-            }
-          }
-        }
-        return routine
-      }),
-    )
-  }
+  // toggling handled by hook
 
-  const updateRoutine = (id: string, updates: Partial<RoutineTask>) => {
-    setRoutines(routines.map((routine) => (routine.id === id ? { ...routine, ...updates } : routine)))
-  }
-
-  const deleteRoutine = (id: string) => {
-    setRoutines(routines.filter((routine) => routine.id !== id))
-    if (selectedRoutineId === id) {
-      onSelectRoutine(null)
-    }
-  }
-
-  const stopRoutine = (id: string) => {
-    setRoutines(routines.map((routine) => (routine.id === id ? { ...routine, stopped: true } : routine)))
-  }
-
-  const pauseRoutine = (id: string) => {
-    setRoutines(routines.map((routine) => (routine.id === id ? { ...routine, paused: true } : routine)))
-  }
+  // updates, delete, stop/pause are handled by detail panel via hook; this page reads and toggles only
 
   const getStreakColor = (streak: number, maxStreak: number) => {
     if (streak === 0) return "bg-muted"
@@ -200,30 +50,26 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
     return "bg-green-500 dark:bg-green-600"
   }
 
-  const calculateAbsenceStreak = (routine: RoutineTask) => {
-    if (!routine.completedDates.length) return 0
-
+  const calculateAbsenceStreak = (routine: Routine) => {
+    const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
     const today = new Date()
     let absenceCount = 0
-
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; ; i++) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
+      if (date < start) break
       const dateString = date.toISOString().split("T")[0]
-
-      if (routine.completedDates.includes(dateString)) {
-        break
-      }
+      if (routine.completedDates.includes(dateString)) break
       absenceCount++
     }
-
     return absenceCount
   }
 
-  const generateStreakData = (routine: RoutineTask): StreakData[] => {
+  const generateStreakData = (routine: Routine): StreakData[] => {
     const data: StreakData[] = []
     const today = new Date()
     const daysToShow = type === "daily" ? 30 : type === "weekly" ? 12 : 6
+    const start = routine.createdAt ? new Date(routine.createdAt) : new Date(today)
 
     for (let i = daysToShow - 1; i >= 0; i--) {
       const date = new Date(today)
@@ -234,7 +80,7 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
       } else {
         date.setMonth(date.getMonth() - i)
       }
-
+      // Always render a full window for design; absence logic uses createdAt separately
       const dateString = date.toISOString().split("T")[0]
       const isCompleted = routine.completedDates.includes(dateString)
 
@@ -243,17 +89,26 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
     return data
   }
 
-  const RoutineItem = ({ routine, isStopped = false }: { routine: RoutineTask; isStopped?: boolean }) => {
+  const RoutineItem = ({ routine }: { routine: Routine }) => {
     const isCompletedToday = routine.completedDates.includes(today)
     const isSelected = selectedRoutineId === routine.id
     const currentAbsence = calculateAbsenceStreak(routine)
-    const isMaxAbsenceExceeded = routine.maxAbsence && currentAbsence >= routine.maxAbsence
+    const daysSinceStart = (() => {
+      const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
+      const t = new Date()
+      const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+      const todayOnly = new Date(t.getFullYear(), t.getMonth(), t.getDate())
+      return Math.max(0, Math.floor((todayOnly.getTime() - startOnly.getTime()) / (1000 * 60 * 60 * 24)))
+    })()
+    const canExceed = typeof routine.maxAbsence === "number" ? daysSinceStart > routine.maxAbsence : false
+    const isMaxAbsenceExceeded = !!routine.maxAbsence && canExceed && currentAbsence >= routine.maxAbsence
     const streakData = generateStreakData(routine)
 
+    const isInactive = !!routine.stopped || !!routine.paused
     return (
       <div
         className={`border rounded-lg py-1.5 px-2 hover:bg-muted/50 transition-colors cursor-pointer ${
-          isStopped ? "opacity-60" : ""
+          isInactive ? "opacity-60" : ""
         } ${isSelected ? "border-foreground/20 bg-muted/30" : "border-border"}`}
         onClick={(e) => {
           e.stopPropagation()
@@ -266,29 +121,29 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
               checked={isCompletedToday}
               onClick={(e) => {
                 e.stopPropagation()
-                if (!isStopped) toggleRoutine(routine.id)
+                if (!isInactive) toggleRoutine(routine.id)
               }}
               variant={isMaxAbsenceExceeded ? "danger" : "default"}
-              className={isStopped ? "opacity-40" : ""}
+              className={isInactive ? "opacity-40" : ""}
             />
-            <span className={`text-sm font-medium ${isStopped ? "line-through" : ""}`}>{routine.name}</span>
+            <span className={`text-sm font-medium ${isInactive ? "line-through" : ""}`}>{routine.name}</span>
             {routine.stakeAmount && (
-              <StakeBadge amount={routine.stakeAmount} variant={isStopped ? "danger" : "success"} />
+              <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />
             )}
-            {isMaxAbsenceExceeded && !isStopped && <AlertTriangle className="h-3 w-3 text-red-500" />}
+            {isMaxAbsenceExceeded && !isInactive && <AlertTriangle className="h-3 w-3 text-red-500" />}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {isStopped ? "Stopped" : `${routine.streak} day streak`}
+              {routine.stopped ? "Stopped" : routine.paused ? "Paused" : `${routine.streak} day streak`}
             </span>
           </div>
         </div>
 
         <StreakVisualization streakData={streakData} maxAbsence={routine.maxAbsence} className="mb-2" />
 
-        {routine.lastCompleted && (
+        {routine.completedDates.length > 0 && (
           <div className="text-xs text-muted-foreground">
-            Last completed: {new Date(routine.lastCompleted).toLocaleDateString()}
+            Last completed: {new Date(routine.completedDates[routine.completedDates.length - 1]).toLocaleDateString()}
           </div>
         )}
       </div>
@@ -303,8 +158,9 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
     }
   }
 
-  const activeRoutines = routines.filter((routine) => !routine.stopped)
-  const stoppedRoutines = routines.filter((routine) => routine.stopped)
+  const routinesOfType: Routine[] = useMemo(() => routines.filter((r) => r.type === type), [routines, type])
+  const activeRoutines = routinesOfType.filter((routine) => !routine.stopped && !routine.paused)
+  const inactiveRoutines = routinesOfType.filter((routine) => routine.stopped || routine.paused)
 
   return (
     <div className="h-full flex flex-col" onClick={handleContainerClick}>
@@ -313,14 +169,21 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
       <PageHeader title={`${type.charAt(0).toUpperCase() + type.slice(1)} Routines`} />
 
       <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 routine-container" onClick={handleContainerClick}>
+        {loading && (
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-2/3" />
+          </div>
+        )}
         {activeRoutines.map((routine) => (
           <RoutineItem key={routine.id} routine={routine} />
         ))}
 
-        {stoppedRoutines.length > 0 && (
-          <CollapsibleSection title="Stopped Routines" count={stoppedRoutines.length}>
-            {stoppedRoutines.map((routine) => (
-              <RoutineItem key={routine.id} routine={routine} isStopped />
+        {inactiveRoutines.length > 0 && (
+          <CollapsibleSection title="Paused/Stopped" count={inactiveRoutines.length}>
+            {inactiveRoutines.map((routine) => (
+              <RoutineItem key={routine.id} routine={routine} />
             ))}
           </CollapsibleSection>
         )}
@@ -337,7 +200,7 @@ export function RoutinePage({ type, selectedRoutineId, onSelectRoutine, onMenuCl
                 onChange={(e) => setNewRoutineName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    addRoutine()
+                    handleAddRoutine()
                   }
                 }}
                 className="pl-11 h-12 text-base border-0 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none shadow-none"

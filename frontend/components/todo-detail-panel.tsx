@@ -1,18 +1,28 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { SpeechBubbleModal } from "@/components/ui/speech-bubble-modal"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Calendar, Clock, MessageSquare, Upload, Send, Star, X } from "lucide-react"
 import { DetailPanelLayout } from "@/components/ui/detail-panel-layout"
 import { ActionButton } from "@/components/ui/action-button"
 import { CircularCheckbox } from "@/components/ui/circular-checkbox"
 import { StakeSection } from "@/components/ui/stake-section"
 import type { Todo } from "@/types"
+import { toast } from "@/hooks/use-toast"
 
 interface TodoDetailPanelProps {
   todo: Todo | null
@@ -25,7 +35,7 @@ interface TodoDetailPanelProps {
 export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }: TodoDetailPanelProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(todo?.text || "")
-  const [memo, setMemo] = useState("")
+  const [memo, setMemo] = useState(todo?.memo || "")
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [stakeAmount, setStakeAmount] = useState("")
@@ -33,12 +43,36 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
   const [chatMessage, setChatMessage] = useState("")
   const [chatHistory, setChatHistory] = useState<Array<{ role: "user" | "ai"; message: string }>>([])
   const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 })
-  const [proverInstructions, setProverInstructions] = useState("")
+  const [proverInstructions, setProverInstructions] = useState(todo?.proverInstructions || "")
   const [isStarred, setIsStarred] = useState(todo?.starred || false)
-  const [isAddedToToday, setIsAddedToToday] = useState(todo?.list === "today")
+  const [isAddedToToday, setIsAddedToToday] = useState(() => {
+    const added = todo?.todayAddedOn
+    if (!added) return false
+    const t = new Date()
+    const todayStr = new Date(t.getFullYear(), t.getMonth(), t.getDate()).toISOString().split("T")[0]
+    return added === todayStr
+  })
   const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(todo?.dueDate || null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteModalPosition, setDeleteModalPosition] = useState({ x: 0, y: 0 })
+
+  // Keep local UI state in sync when a new todo is selected or data updates
+  React.useEffect(() => {
+    setEditText(todo?.text || "")
+    setMemo(todo?.memo || "")
+    setProverInstructions(todo?.proverInstructions || "")
+    setIsStarred(!!todo?.starred)
+    const d = todo?.dueDate || null
+    setSelectedDueDate(d)
+    const added = todo?.todayAddedOn
+    if (added) {
+      const t = new Date()
+      const todayStr = new Date(t.getFullYear(), t.getMonth(), t.getDate()).toISOString().split("T")[0]
+      setIsAddedToToday(added === todayStr)
+    } else {
+      setIsAddedToToday(false)
+    }
+  }, [todo?.id, todo?.text, todo?.memo, todo?.proverInstructions, todo?.starred, todo?.dueDate, todo?.todayAddedOn])
 
   if (!todo) {
     return (
@@ -54,15 +88,18 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
     if (editText.trim()) {
       onUpdate(todo.id, { text: editText.trim() })
       setIsEditing(false)
+      toast({ title: "Task updated" })
     }
   }
 
   const handleAddToToday = () => {
+    const now = new Date()
+    const todayStr = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0]
     if (isAddedToToday) {
-      onUpdate(todo.id, { list: "tasks" })
+      onUpdate(todo.id, { todayAddedOn: null as any })
       setIsAddedToToday(false)
     } else {
-      onUpdate(todo.id, { list: "today", createdAt: new Date() })
+      onUpdate(todo.id, { todayAddedOn: todayStr } as any)
       setIsAddedToToday(true)
     }
   }
@@ -75,11 +112,13 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
     onUpdate(todo.id, { dueDate: date })
     setSelectedDueDate(date)
     setShowDatePicker(false)
+    toast({ title: "Due date set", description: date.toLocaleDateString() })
   }
 
   const handleRemoveDueDate = () => {
     onUpdate(todo.id, { dueDate: null })
     setSelectedDueDate(null)
+    toast({ title: "Due date removed" })
   }
 
   const handleToggleStar = () => {
@@ -157,10 +196,12 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
       ])
 
       setTimeout(() => {
-        setProverInstructions(
-          "Take a photo of the completed task with timestamp. Must include clear view of the work area and any relevant documentation or evidence of completion.",
-        )
+        const instructions =
+          "Take a photo of the completed task with timestamp. Must include clear view of the work area and any relevant documentation or evidence of completion."
+        setProverInstructions(instructions)
+        onUpdate(todo.id, { proverInstructions: instructions })
         setShowProverModal(false)
+        toast({ title: "Instructions updated" })
       }, 1500)
     }, 1000)
 
@@ -180,19 +221,17 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
     }
   }
 
-  const handleShowProverModal = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    setButtonPosition({ x: rect.left, y: rect.bottom })
+  const handleShowProverModal = () => {
+    setButtonPosition({ x: 0, y: 0 })
     setShowProverModal(true)
   }
 
   const handleStakeSubmit = (amount: number, currency: string) => {
     onUpdate(todo.id, { stakeAmount: amount, stakeCurrency: currency })
+    toast({ title: "Stake updated", description: `${amount} ${currency}` })
   }
 
-  const handleDeleteClick = (event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    setDeleteModalPosition({ x: rect.left, y: rect.bottom })
+  const handleDeleteClick = () => {
     setShowDeleteModal(true)
   }
 
@@ -204,7 +243,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
   return (
     <DetailPanelLayout
       onClose={onClose}
-      onDelete={handleDeleteClick}
+      onDelete={() => handleDeleteClick()}
       footerContent={`Created ${todo.createdAt.toLocaleDateString()}`}
     >
       <div className="flex items-center gap-3">
@@ -342,6 +381,12 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
           placeholder="Add notes..."
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
+          onBlur={() => {
+            if (todo && memo !== (todo.memo || "")) {
+              onUpdate(todo.id, { memo })
+              toast({ title: "Memo saved" })
+            }
+          }}
           className="min-h-[100px] resize-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none focus-visible:border-none"
         />
       </div>
@@ -426,14 +471,25 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
       </SpeechBubbleModal>
 
       {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleConfirmDelete}
-        position={deleteModalPosition}
-        title="Delete Todo"
-        description="Are you sure you want to delete this todo? This action cannot be undone."
-      />
+      <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Todo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this todo? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DetailPanelLayout>
   )
 }

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 interface ActionButtonProps {
   icon: React.ReactNode
   children: React.ReactNode
-  onClick?: () => void
+  onClick?: React.MouseEventHandler<HTMLButtonElement>
   variant?: "default" | "outline" | "ghost" | "destructive"
   className?: string
   disabled?: boolean
