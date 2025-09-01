@@ -139,15 +139,23 @@ export function RoutineDetailPanel({
   }
 
   const calculateAbsenceStreak = () => {
-    const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
     const today = new Date()
+    // Normalize dates to 00:00 for robust comparisons
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const created = routine.createdAt ? new Date(routine.createdAt) : null
+    const earliestCompleted = routine.completedDates.length
+      ? new Date(routine.completedDates[0] + "T00:00:00")
+      : null
+    const startBase = created ?? earliestCompleted ?? todayOnly
+    const startOnly = new Date(startBase.getFullYear(), startBase.getMonth(), startBase.getDate())
+
     let absenceCount = 0
-    // Count back from today until we hit a completion or creation date
-    for (let i = 0; ; i++) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      if (date < start) break
-      const dateString = date.toISOString().split("T")[0]
+    // Count from yesterday backwards until a completion or creation date
+    for (let i = 1; ; i++) {
+      const d = new Date(todayOnly)
+      d.setDate(d.getDate() - i)
+      if (d < startOnly) break // do not count before creation/start date
+      const dateString = d.toISOString().split("T")[0]
       if (routine.completedDates.includes(dateString)) break
       absenceCount++
     }
@@ -156,10 +164,14 @@ export function RoutineDetailPanel({
 
   const currentAbsence = calculateAbsenceStreak()
   const daysSinceStart = (() => {
-    const start = routine.createdAt ? new Date(routine.createdAt) : new Date()
     const today = new Date()
-    const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate())
     const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const created = routine.createdAt ? new Date(routine.createdAt) : null
+    const earliestCompleted = routine.completedDates.length
+      ? new Date(routine.completedDates[0] + "T00:00:00")
+      : null
+    const startBase = created ?? earliestCompleted ?? todayOnly
+    const startOnly = new Date(startBase.getFullYear(), startBase.getMonth(), startBase.getDate())
     return Math.max(0, Math.floor((todayOnly.getTime() - startOnly.getTime()) / (1000 * 60 * 60 * 24)))
   })()
   const canExceed = typeof routine.maxAbsence === "number" ? daysSinceStart > routine.maxAbsence : false
@@ -191,7 +203,8 @@ export function RoutineDetailPanel({
       } else {
         date.setMonth(date.getMonth() - i)
       }
-      // Always render a full window for design; absence logic uses createdAt separately
+      // Do not include dates prior to routine creation
+      if (date < start) continue
       const dateString = date.toISOString().split("T")[0]
       const isCompleted = routine.completedDates.includes(dateString)
 
