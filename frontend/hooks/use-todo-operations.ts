@@ -87,12 +87,22 @@ export function useTodoOperations() {
   const addTodo = useCallback(
     async (text: string, activeList: string) => {
       if (!user || !userTodosCol) return
-      const payload = {
+      const now = new Date()
+      const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const todayStr = todayOnly.toISOString().split("T")[0]
+
+      const payload: any = {
         text,
         completed: false,
         createdAt: serverTimestamp(),
         list: activeList,
         starred: false,
+      }
+      // Behavior based on current view
+      if (activeList === "today") {
+        payload.todayAddedOn = todayStr
+      } else if (activeList === "planned") {
+        payload.dueDate = todayOnly
       }
       await addDoc(userTodosCol, payload as any)
       toast({ title: "Task added" })
