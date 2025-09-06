@@ -2,9 +2,7 @@
 
 import React, { useState } from "react"
 import { TodoSidebar } from "@/components/todo-sidebar"
-import { TodoMain } from "@/components/todo-main"
 import { TodoDetailPanel } from "@/components/todo-detail-panel"
-import { RoutinePage } from "@/components/routine-page"
 import { RoutineDetailPanel } from "@/components/routine-detail-panel"
 import { ReliabilityChartPage } from "@/components/reliability-chart-page"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -16,13 +14,15 @@ import { useUIState } from "@/hooks/use-ui-state"
 import { useSelectionState } from "@/hooks/use-selection-state"
 import { useTodoOperations } from "@/hooks/use-todo-operations"
 import { useRoutineOperations } from "@/hooks/use-routine-operations"
-import { getCurrentView, getFilteredTodos, getTodoCounts } from "@/utils/view-helpers"
+import { getFilteredTodos, getTodoCounts } from "@/utils/view-helpers"
 import { useAuth } from "@/hooks/use-auth"
 import { Card } from "@/components/ui/card"
 import { LogIn } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
+import { CombinedMain } from "@/components/combined-main"
+import { HomeDex } from "@/components/home-dex"
 
 export default function TodoApp() {
   const { user, loading, signInWithGoogle, signInGuest, signUpWithEmail, signInWithEmail, resetPassword } = useAuth()
@@ -43,7 +43,6 @@ export default function TodoApp() {
     setRightPanelOpen: uiState.setRightPanelOpen,
   })
 
-  const currentView = getCurrentView(appState.activeList)
   const filteredTodos = getFilteredTodos(todoOps.todos, appState.activeList)
   const todoCounts = getTodoCounts(todoOps.todos)
 
@@ -185,13 +184,10 @@ export default function TodoApp() {
             setActiveList={(list) => {
               appState.setActiveList(list)
               uiState.setSidebarOpen(false)
-              if (list === "reliability") {
+              if (list === "reliability" || list === "home") {
                 uiState.setRightPanelOpen(false)
               }
             }}
-            customLists={todoOps.customLists}
-            addCustomList={todoOps.addCustomList}
-            deleteCustomList={todoOps.deleteCustomList}
             todoCounts={todoCounts}
           />
 
@@ -201,25 +197,31 @@ export default function TodoApp() {
           />
         </div>
 
-        <div className={`flex-1 flex ${uiState.rightPanelOpen ? "md:mr-80" : ""}`}>
+        <div className={`flex-1 flex ${uiState.rightPanelOpen && appState.activeList !== "home" ? "md:mr-80" : ""}`}>
           {appState.activeList === "reliability" ? (
             <div className="flex-1 flex flex-col min-h-0 relative">
               <ReliabilityChartPage onMenuClick={handleMenuClick} />
             </div>
-          ) : currentView.type === "routine" ? (
+          ) : appState.activeList === "home" ? (
             <div className="flex-1 flex flex-col min-h-0 relative">
-              <RoutinePage
-                type={currentView.routineType}
-                selectedRoutineId={appState.selectedRoutineId ?? undefined}
-                onSelectRoutine={selectionState.selectRoutine}
+              <HomeDex
                 onMenuClick={handleMenuClick}
+                onAddTask={(text, amount, currency, instructions) =>
+                  todoOps.addTodo(text, "today", amount, currency, instructions)
+                }
+                onAddRoutine={(name, type, amount, currency, maxAbs, instructions) =>
+                  routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions)
+                }
               />
             </div>
           ) : (
-            <TodoMain
-              todos={filteredTodos}
+            <CombinedMain
               activeList={appState.activeList}
-              addTodo={(text) => todoOps.addTodo(text, appState.activeList)}
+              // todos
+              todos={filteredTodos}
+              addTodoWithMeta={(text, stakeAmount, stakeCurrency, proverInstructions) =>
+                todoOps.addTodo(text, appState.activeList, stakeAmount, stakeCurrency, proverInstructions)
+              }
               toggleTodo={todoOps.toggleTodo}
               deleteTodo={todoOps.deleteTodo}
               toggleStar={todoOps.toggleStar}
@@ -227,13 +229,19 @@ export default function TodoApp() {
               selectedTodoId={appState.selectedTodo?.id}
               onDeselectTodo={selectionState.deselectTodo}
               onMenuClick={handleMenuClick}
+              // routines
+              routines={routineOps.routines}
+              addRoutine={routineOps.addRoutine}
+              toggleRoutine={routineOps.toggleRoutine}
+              selectedRoutineId={appState.selectedRoutineId}
+              onSelectRoutine={selectionState.selectRoutine}
             />
           )}
         </div>
 
-        {uiState.rightPanelOpen && appState.activeList !== "reliability" && (
+        {uiState.rightPanelOpen && appState.activeList !== "reliability" && appState.activeList !== "home" && (
           <div className="fixed right-0 top-0 bottom-0 z-30">
-            {currentView.type === "todo" ? (
+            {appState.selectedTodo ? (
               <TodoDetailPanel
                 todo={appState.selectedTodo}
                 onClose={selectionState.closeRightPanel}
@@ -241,7 +249,7 @@ export default function TodoApp() {
                 onDelete={todoOps.deleteTodo}
                 onToggle={todoOps.toggleTodo}
               />
-            ) : (
+            ) : appState.selectedRoutineId ? (
               <RoutineDetailPanel
                 routine={
                   appState.selectedRoutineId
@@ -254,9 +262,18 @@ export default function TodoApp() {
                 onToggle={routineOps.toggleRoutine}
                 onStop={routineOps.stopRoutine}
                 onPause={routineOps.pauseRoutine}
-                type={currentView.routineType}
+                // Default detail type to the routine's own type; fallback daily
+                type={
+                  (appState.selectedRoutineId
+                    ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
+                        | "daily"
+                        | "weekly"
+                        | "monthly"
+                        | undefined)
+                    : undefined) || "daily"
+                }
               />
-            )}
+            ) : null}
           </div>
         )}
       </div>

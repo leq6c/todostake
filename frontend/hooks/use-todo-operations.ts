@@ -85,7 +85,13 @@ export function useTodoOperations() {
   }, [user, userTodosCol, userListsCol, fromFirestoreTodo])
 
   const addTodo = useCallback(
-    async (text: string, activeList: string) => {
+    async (
+      text: string,
+      activeList: string,
+      stakeAmount?: number,
+      stakeCurrency?: string,
+      proverInstructions?: string,
+    ) => {
       if (!user || !userTodosCol) return
       const now = new Date()
       const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -97,6 +103,13 @@ export function useTodoOperations() {
         createdAt: serverTimestamp(),
         list: activeList,
         starred: false,
+      }
+      if (typeof stakeAmount === "number" && stakeAmount > 0) {
+        payload.stakeAmount = stakeAmount
+        payload.stakeCurrency = stakeCurrency || "SOL"
+      }
+      if (proverInstructions && proverInstructions.trim()) {
+        payload.proverInstructions = proverInstructions.trim()
       }
       // Behavior based on current view
       if (activeList === "today") {

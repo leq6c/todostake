@@ -51,7 +51,6 @@ export function useRoutineOperations() {
         completedDates: [],
       }
       await setDoc(doc(routinesCol, id), payload)
-      toast({ title: "Routine added", description: name })
     },
     [user, routinesCol],
   )
@@ -71,7 +70,6 @@ export function useRoutineOperations() {
     async (id: string) => {
       if (!user || !routinesCol) return
       await deleteDoc(doc(routinesCol, id))
-      toast({ title: "Routine deleted" })
     },
     [user, routinesCol],
   )
