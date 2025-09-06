@@ -195,7 +195,7 @@ export function TodoMain({
         </div>
       </div>
 
-      <div className="p-3 pt-0 bg-background/95 backdrop-blur-sm">
+      <div className="p-3 pt-0 backdrop-blur-sm">
         <div className="w-full">
           <div className="flex gap-3">
             <div className="flex-1 relative rounded border-1 dark:border-none">

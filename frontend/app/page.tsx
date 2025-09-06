@@ -154,8 +154,9 @@ export default function TodoApp() {
 
   return (
     <ThemeProvider>
-      <div className="flex h-screen bg-background overflow-hidden">
-        <div className="md:hidden fixed top-4 left-4 z-50">
+      <div className="min-h-screen w-full bg-[radial-gradient(circle_at_20%_10%,rgba(99,102,241,0.08),transparent_60%),radial-gradient(circle_at_80%_90%,rgba(56,189,248,0.08),transparent_60%)] flex items-center justify-center p-3 md:p-6">
+        <div className="relative w-full max-w-7xl h-[85vh] md:h-[88vh] rounded-2xl bg-card/95 ring-1 ring-border/50 shadow-2xl overflow-hidden">
+        <div className="md:hidden absolute top-4 left-4 z-50">
           <Button
             variant="ghost"
             size="sm"
@@ -167,13 +168,13 @@ export default function TodoApp() {
         </div>
 
         {uiState.sidebarOpen && (
-          <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => uiState.setSidebarOpen(false)} />
+          <div className="md:hidden absolute inset-0 bg-black/50 z-40" onClick={() => uiState.setSidebarOpen(false)} />
         )}
 
         <div
           ref={uiState.sidebarRef}
           className={`
-          fixed md:relative inset-y-0 left-0 z-50 md:z-auto
+          absolute md:relative inset-y-0 left-0 z-50 md:z-1 h-full
           transform ${uiState.sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0 transition-transform duration-300 ease-in-out
         `}
@@ -197,85 +198,91 @@ export default function TodoApp() {
           />
         </div>
 
-        <div className={`flex-1 flex ${uiState.rightPanelOpen && appState.activeList !== "home" ? "md:mr-80" : ""}`}>
-          {appState.activeList === "reliability" ? (
-            <div className="flex-1 flex flex-col min-h-0 relative">
-              <ReliabilityChartPage onMenuClick={handleMenuClick} />
-            </div>
-          ) : appState.activeList === "home" ? (
-            <div className="flex-1 flex flex-col min-h-0 relative">
-              <HomeDex
+        <div className="h-full flex absolute top-0 left-0 w-full">
+          {/* Sidebar spacer to keep main content centered to the right of sidebar */}
+          <div className="hidden md:block shrink-0" style={{ width: `${uiState.sidebarWidth}px` }} />
+
+          <div className={`flex-1 flex h-full ${uiState.rightPanelOpen && appState.activeList !== "home" ? "md:mr-80" : ""}`}>
+            {appState.activeList === "reliability" ? (
+              <div className="flex-1 flex flex-col min-h-0 relative">
+                <ReliabilityChartPage onMenuClick={handleMenuClick} />
+              </div>
+            ) : appState.activeList === "home" ? (
+              <div className="flex-1 flex flex-col min-h-0 relative">
+                <HomeDex
+                  onMenuClick={handleMenuClick}
+                  onAddTask={(text, amount, currency, instructions) =>
+                    todoOps.addTodo(text, "today", amount, currency, instructions)
+                  }
+                  onAddRoutine={(name, type, amount, currency, maxAbs, instructions) =>
+                    routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions)
+                  }
+                />
+              </div>
+            ) : (
+              <CombinedMain
+                activeList={appState.activeList}
+                // todos
+                todos={filteredTodos}
+                addTodoWithMeta={(text, stakeAmount, stakeCurrency, proverInstructions) =>
+                  todoOps.addTodo(text, appState.activeList, stakeAmount, stakeCurrency, proverInstructions)
+                }
+                toggleTodo={todoOps.toggleTodo}
+                deleteTodo={todoOps.deleteTodo}
+                toggleStar={todoOps.toggleStar}
+                onSelectTodo={selectionState.selectTodo}
+                selectedTodoId={appState.selectedTodo?.id}
+                onDeselectTodo={selectionState.deselectTodo}
                 onMenuClick={handleMenuClick}
-                onAddTask={(text, amount, currency, instructions) =>
-                  todoOps.addTodo(text, "today", amount, currency, instructions)
-                }
-                onAddRoutine={(name, type, amount, currency, maxAbs, instructions) =>
-                  routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions)
-                }
+                // routines
+                routines={routineOps.routines}
+                addRoutine={routineOps.addRoutine}
+                toggleRoutine={routineOps.toggleRoutine}
+                selectedRoutineId={appState.selectedRoutineId}
+                onSelectRoutine={selectionState.selectRoutine}
               />
+            )}
+          </div>
+
+          {uiState.rightPanelOpen && appState.activeList !== "reliability" && appState.activeList !== "home" && (
+            <div className="absolute right-0 top-0 bottom-0 z-30">
+              {appState.selectedTodo ? (
+                <TodoDetailPanel
+                  todo={appState.selectedTodo}
+                  onClose={selectionState.closeRightPanel}
+                  onUpdate={todoOps.updateTodo}
+                  onDelete={todoOps.deleteTodo}
+                  onToggle={todoOps.toggleTodo}
+                />
+              ) : appState.selectedRoutineId ? (
+                <RoutineDetailPanel
+                  routine={
+                    appState.selectedRoutineId
+                      ? routineOps.routines.find((r) => r.id === appState.selectedRoutineId) || null
+                      : null
+                  }
+                  onClose={selectionState.closeRightPanel}
+                  onUpdate={routineOps.updateRoutine}
+                  onDelete={routineOps.deleteRoutine}
+                  onToggle={routineOps.toggleRoutine}
+                  onStop={routineOps.stopRoutine}
+                  onPause={routineOps.pauseRoutine}
+                  // Default detail type to the routine's own type; fallback daily
+                  type={
+                    (appState.selectedRoutineId
+                      ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
+                          | "daily"
+                          | "weekly"
+                          | "monthly"
+                          | undefined)
+                      : undefined) || "daily"
+                  }
+                />
+              ) : null}
             </div>
-          ) : (
-            <CombinedMain
-              activeList={appState.activeList}
-              // todos
-              todos={filteredTodos}
-              addTodoWithMeta={(text, stakeAmount, stakeCurrency, proverInstructions) =>
-                todoOps.addTodo(text, appState.activeList, stakeAmount, stakeCurrency, proverInstructions)
-              }
-              toggleTodo={todoOps.toggleTodo}
-              deleteTodo={todoOps.deleteTodo}
-              toggleStar={todoOps.toggleStar}
-              onSelectTodo={selectionState.selectTodo}
-              selectedTodoId={appState.selectedTodo?.id}
-              onDeselectTodo={selectionState.deselectTodo}
-              onMenuClick={handleMenuClick}
-              // routines
-              routines={routineOps.routines}
-              addRoutine={routineOps.addRoutine}
-              toggleRoutine={routineOps.toggleRoutine}
-              selectedRoutineId={appState.selectedRoutineId}
-              onSelectRoutine={selectionState.selectRoutine}
-            />
           )}
         </div>
-
-        {uiState.rightPanelOpen && appState.activeList !== "reliability" && appState.activeList !== "home" && (
-          <div className="fixed right-0 top-0 bottom-0 z-30">
-            {appState.selectedTodo ? (
-              <TodoDetailPanel
-                todo={appState.selectedTodo}
-                onClose={selectionState.closeRightPanel}
-                onUpdate={todoOps.updateTodo}
-                onDelete={todoOps.deleteTodo}
-                onToggle={todoOps.toggleTodo}
-              />
-            ) : appState.selectedRoutineId ? (
-              <RoutineDetailPanel
-                routine={
-                  appState.selectedRoutineId
-                    ? routineOps.routines.find((r) => r.id === appState.selectedRoutineId) || null
-                    : null
-                }
-                onClose={selectionState.closeRightPanel}
-                onUpdate={routineOps.updateRoutine}
-                onDelete={routineOps.deleteRoutine}
-                onToggle={routineOps.toggleRoutine}
-                onStop={routineOps.stopRoutine}
-                onPause={routineOps.pauseRoutine}
-                // Default detail type to the routine's own type; fallback daily
-                type={
-                  (appState.selectedRoutineId
-                    ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
-                        | "daily"
-                        | "weekly"
-                        | "monthly"
-                        | undefined)
-                    : undefined) || "daily"
-                }
-              />
-            ) : null}
-          </div>
-        )}
+        </div>
       </div>
     </ThemeProvider>
   )
