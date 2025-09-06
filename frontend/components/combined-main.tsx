@@ -169,6 +169,9 @@ export function CombinedMain({
                 <span className="text-[11px] text-muted-foreground capitalize">
                   {routine.type.charAt(0).toUpperCase() + routine.type.slice(1)}
                 </span>
+                {routine.endDate && (
+                  <span className="text-[11px] text-muted-foreground">· until {new Date(routine.endDate).toLocaleDateString()}</span>
+                )}
                 {routine.stakeAmount && (
                   <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />
                 )}

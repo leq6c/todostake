@@ -50,6 +50,7 @@ export function RoutineDetailPanel({
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(routine?.name || "")
   const [description, setDescription] = useState(routine?.description || "")
+  const [memo, setMemo] = useState(routine?.memo || "")
   const [stakeAmount, setStakeAmount] = useState("")
   const [maxAbsence, setMaxAbsence] = useState("")
   const [showProverModal, setShowProverModal] = useState(false)
@@ -58,11 +59,14 @@ export function RoutineDetailPanel({
   const [showReasonModal, setShowReasonModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteModalPosition, setDeleteModalPosition] = useState({ x: 0, y: 0 })
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false)
+  const [currentDate, setCurrentDate] = useState(new Date())
 
   // Keep description in sync with selected routine; call hook unconditionally
   useEffect(() => {
     setDescription(routine?.description || "")
-  }, [routine?.id, routine?.description])
+    setMemo(routine?.memo || "")
+  }, [routine?.id, routine?.description, routine?.memo])
 
   if (!routine) {
     return (
@@ -81,8 +85,8 @@ export function RoutineDetailPanel({
     }
   }
 
-  const handleSaveDescription = () => {
-    onUpdate(routine.id, { description })
+  const handleSaveMemo = () => {
+    onUpdate(routine.id, { memo })
   }
 
   const handleStakeSubmit = (amount: number, currency: string) => {
@@ -174,8 +178,39 @@ export function RoutineDetailPanel({
     const startOnly = new Date(startBase.getFullYear(), startBase.getMonth(), startBase.getDate())
     return Math.max(0, Math.floor((todayOnly.getTime() - startOnly.getTime()) / (1000 * 60 * 60 * 24)))
   })()
-  const canExceed = typeof routine.maxAbsence === "number" ? daysSinceStart > routine.maxAbsence : false
-  const isMaxAbsenceExceeded = !!routine.maxAbsence && canExceed && currentAbsence >= routine.maxAbsence
+  const unitLabel = type === "daily" ? "days" : type === "weekly" ? "weeks" : "months"
+  // Calendar-based unit diffs
+  const monthsDiff = (a: Date, b: Date) => (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth())
+  const startOfWeek = (d: Date) => {
+    const s = new Date(d)
+    s.setHours(0, 0, 0, 0)
+    s.setDate(s.getDate() - s.getDay()) // Sunday-start
+    return s
+  }
+  const lastCompletedDate = routine.completedDates.length
+    ? new Date(routine.completedDates[routine.completedDates.length - 1] + "T00:00:00")
+    : null
+  const unitsSinceStart = (() => {
+    if (type === "weekly") return Math.max(1, Math.floor(daysSinceStart / 7))
+    if (type === "monthly") return Math.max(1, monthsDiff(startOnly, todayOnly) + 1)
+    return daysSinceStart
+  })()
+  const currentAbsenceUnits = (() => {
+    if (!lastCompletedDate) {
+      return type === "daily" ? currentAbsence : type === "weekly" ? Math.floor(daysSinceStart / 7) : monthsDiff(startOnly, todayOnly)
+    }
+    if (type === "weekly") {
+      const w1 = startOfWeek(lastCompletedDate)
+      const w2 = startOfWeek(todayOnly)
+      return Math.max(0, Math.floor((w2.getTime() - w1.getTime()) / (7 * 24 * 60 * 60 * 1000)))
+    }
+    if (type === "monthly") {
+      return Math.max(0, monthsDiff(new Date(lastCompletedDate.getFullYear(), lastCompletedDate.getMonth(), 1), new Date(todayOnly.getFullYear(), todayOnly.getMonth(), 1)))
+    }
+    return currentAbsence
+  })()
+  const canExceed = typeof routine.maxAbsence === "number" ? unitsSinceStart > routine.maxAbsence : false
+  const isMaxAbsenceExceeded = !!routine.maxAbsence && canExceed && currentAbsenceUnits >= routine.maxAbsence
 
   const getTypeIcon = () => {
     switch (type) {
@@ -186,6 +221,42 @@ export function RoutineDetailPanel({
       case "monthly":
         return <TrendingUp className="h-4 w-4" />
     }
+  }
+  // Simple inline month picker helpers (similar to Todo panel)
+  const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentDate((prev) => {
+      const d = new Date(prev)
+      direction === "prev" ? d.setMonth(prev.getMonth() - 1) : d.setMonth(prev.getMonth() + 1)
+      return d
+    })
+  }
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(currentDate)
+    const firstDay = getFirstDayOfMonth(currentDate)
+    const today = new Date()
+    const nodes: React.ReactNode[] = []
+    for (let i = 0; i < firstDay; i++) nodes.push(<div key={`empty-${i}`} className="h-8 w-8" />)
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      const isToday = date.toDateString() === today.toDateString()
+      nodes.push(
+        <button
+          key={day}
+          onClick={() => {
+            onUpdate(routine.id, { endDate: date })
+            setShowEndDatePicker(false)
+          }}
+          className={`h-8 w-8 text-sm rounded-full hover:bg-muted transition-colors ${
+            isToday ? "bg-foreground text-background" : "text-foreground"
+          }`}
+        >
+          {day}
+        </button>,
+      )
+    }
+    return nodes
   }
 
   const generateStreakData = (): StreakData[] => {
@@ -238,13 +309,13 @@ export function RoutineDetailPanel({
   const statsData = [
     { label: "Total Completed", value: routine.completedDates.length },
     { label: "Success Rate", value: getSuccessRate(), suffix: "%" },
-  ]
+  ];
 
   return (
     <DetailPanelLayout
       onClose={onClose}
       onDelete={() => handleDeleteClick()}
-      footerContent={`${routine.completedDates.length} completions`}
+      footerContent={`Created ${new Date(routine.createdAt ?? new Date()).toLocaleDateString()}`}
     >
       <div className="flex items-center gap-3">
         <CircularCheckbox
@@ -330,7 +401,109 @@ export function RoutineDetailPanel({
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* End date */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-foreground">End date</label>
+        <div className="space-y-2 relative">
+          {routine.endDate ? (
+            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">Until {new Date(routine.endDate).toLocaleDateString()}</span>
+              </div>
+              <button
+                onClick={() => onUpdate(routine.id, { endDate: null })}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => setShowEndDatePicker(true)} className="h-8">
+              Set end date
+            </Button>
+          )}
+
+          {showEndDatePicker && (
+            <div className="p-4 border border-border rounded-lg bg-card space-y-3 shadow-lg absolute z-50 mt-2">
+              <div className="flex items-center justify-between">
+                <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")}>‹</Button>
+                <h4 className="font-medium">
+                  {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                </h4>
+                <Button variant="ghost" size="sm" onClick={() => navigateMonth("next")}>›</Button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-xs text-muted-foreground text-center">
+                {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                  <div key={day} className="h-6 flex items-center justify-center font-medium">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" onClick={() => setShowEndDatePicker(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Memo */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Memo</label>
+        <Textarea
+          placeholder="Add notes..."
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          onBlur={handleSaveMemo}
+          className="min-h-[100px] resize-none focus-visible:ring-2 focus-visible:ring-ring/30 border border-input bg-background rounded-md"
+        />
+      </div>
+
+      {/* Stake section */}
+      <StakeSection
+        currentStakeAmount={routine.stakeAmount}
+        currentCurrency={routine.stakeCurrency}
+        onStakeSubmit={handleStakeSubmit}
+        onAddInstructions={handleAddProverInstructions}
+        proverInstructions={routine.proverInstructions}
+        description="Put money on the line to stay committed to your routine"
+      />
+
+      {/* Maximum Absence section */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-foreground">Maximum Absence ({unitLabel})</label>
+        <div className="space-y-3">
+          <InputWithButton
+            value={maxAbsence}
+            onChange={setMaxAbsence}
+            onSubmit={handleSaveMaxAbsence}
+            placeholder={unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1)}
+            buttonText="Set"
+            type="number"
+          />
+          {routine.maxAbsence && (
+            <div
+              className={`text-sm ${isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+            >
+              Max absence: {routine.maxAbsence} {unitLabel} {isMaxAbsenceExceeded && "(EXCEEDED)"}
+            </div>
+          )}
+          {currentAbsenceUnits > 0 && (
+            <div
+              className={`text-sm ${isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+            >
+              Current absence: {currentAbsenceUnits} {unitLabel}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">Set maximum {unitLabel} you can miss before streak turns red</p>
+        </div>
+      </div>
+
+      {/* Actions (bottom) */}
       <div className="space-y-3">
         <label className="text-sm font-medium text-foreground">Actions</label>
         <div className="flex items-center gap-2">
@@ -364,58 +537,6 @@ export function RoutineDetailPanel({
             <Square className="h-3 w-3 rounded-sm" />
           </Button>
         </div>
-      </div>
-
-      {/* Stake section */}
-      <StakeSection
-        currentStakeAmount={routine.stakeAmount}
-        currentCurrency={routine.stakeCurrency}
-        onStakeSubmit={handleStakeSubmit}
-        onAddInstructions={handleAddProverInstructions}
-        proverInstructions={routine.proverInstructions}
-        description="Put money on the line to stay committed to your routine"
-      />
-
-      {/* Maximum Absence section */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">Maximum Absence</label>
-        <div className="space-y-3">
-          <InputWithButton
-            value={maxAbsence}
-            onChange={setMaxAbsence}
-            onSubmit={handleSaveMaxAbsence}
-            placeholder="Days"
-            buttonText="Set"
-            type="number"
-          />
-          {routine.maxAbsence && (
-            <div
-              className={`text-sm ${isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
-            >
-              Max absence: {routine.maxAbsence} days {isMaxAbsenceExceeded && "(EXCEEDED)"}
-            </div>
-          )}
-          {currentAbsence > 0 && (
-            <div
-              className={`text-sm ${isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
-            >
-              Current absence: {currentAbsence} days
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground">Set maximum days you can miss before streak turns red</p>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Description</label>
-        <Textarea
-          placeholder="Add routine description..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          onBlur={handleSaveDescription}
-          className="min-h-[100px] resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
       </div>
 
       <div className="space-y-3">

@@ -25,12 +25,14 @@ export interface Routine {
   type: "daily" | "weekly" | "monthly"
   createdAt?: Date
   description?: string
+  memo?: string
   streak: number
   maxStreak: number
   completedDates: string[]
   stakeAmount?: number
   stakeCurrency?: string // Added stakeCurrency property for currency selection
   maxAbsence?: number
+  endDate?: Date | null
   stopped?: boolean
   paused?: boolean
   proverInstructions?: string

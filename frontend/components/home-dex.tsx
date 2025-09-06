@@ -25,6 +25,7 @@ interface HomeDexProps {
     stakeCurrency?: string,
     maxAbsence?: number,
     instructions?: string,
+    endDate?: Date,
   ) => void
   onMenuClick?: () => void
 }
@@ -36,9 +37,12 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
   const [stakeCurrency, setStakeCurrency] = useState("SOL")
   const [instructions, setInstructions] = useState("")
   const [maxAbsence, setMaxAbsence] = useState("")
+  const unitLabel = type === "task" ? "days" : type === "weekly" ? "weeks" : type === "monthly" ? "months" : "days"
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(null)
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false)
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null)
 
   const submit = () => {
     if (!text.trim()) return
@@ -61,6 +65,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
         stakeCurrency,
         isNaN(maxAbs) || maxAbs <= 0 ? undefined : maxAbs,
         instructions.trim() || undefined,
+        selectedEndDate ?? undefined,
       )
     }
     setText("")
@@ -69,6 +74,8 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
     setMaxAbsence("")
     setSelectedDueDate(null)
     setShowDatePicker(false)
+    setSelectedEndDate(null)
+    setShowEndDatePicker(false)
   }
 
   return (
@@ -192,16 +199,76 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                   </div>
                 )}
                 {type !== "task" && (
-                  <div>
-                    <div className="text-xs text-foreground mb-1">Maximum Absence (days)</div>
-                    <Input
-                      placeholder="e.g. 7"
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs text-foreground mb-1">End date</div>
+                      <div className="space-y-2 relative">
+                        {selectedEndDate ? (
+                          <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-foreground">Until {selectedEndDate.toLocaleDateString()}</span>
+                            </div>
+                            <button
+                              onClick={() => setSelectedEndDate(null)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <ActionButton icon={<Clock className="h-4 w-4" />} onClick={() => setShowEndDatePicker(true)}>
+                            Set end date
+                          </ActionButton>
+                        )}
+
+                        {showEndDatePicker && (
+                          <div className="absolute z-50 top-full left-0 mt-2 w-80 p-4 border border-border rounded-lg bg-card shadow-xl space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
+                                <ChevronLeft className="h-4 w-4" />
+                              </Button>
+                              <h4 className="font-medium">
+                                {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                              </h4>
+                              <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1 text-xs text-muted-foreground text-center">
+                              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                                <div key={day} className="h-6 flex items-center justify-center font-medium">
+                                  {day}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                              {renderCalendar(currentDate, (date) => {
+                                setSelectedEndDate(date)
+                                setShowEndDatePicker(false)
+                              })}
+                            </div>
+                            <div className="flex justify-end">
+                              <Button size="sm" variant="outline" onClick={() => setShowEndDatePicker(false)}>
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-foreground mb-1">Maximum Absence ({unitLabel})</div>
+                      <Input
+                      placeholder={unitLabel === "days" ? "e.g. 7" : unitLabel === "weeks" ? "e.g. 4" : "e.g. 2"}
                       type="number"
                       value={maxAbsence}
                       onChange={(e) => setMaxAbsence(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && submit()}
                       className="h-10 text-sm border-0 focus:ring-0 focus-visible:ring-0 bg-muted/50 text-foreground placeholder:text-muted-foreground"
                     />
+                    </div>
                   </div>
                 )}
               </div>

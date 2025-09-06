@@ -38,7 +38,15 @@ export function useRoutineOperations() {
   }, [user, routinesCol])
 
   const addRoutine = useCallback(
-    async (name: string, type: Routine["type"]) => {
+    async (
+      name: string,
+      type: Routine["type"],
+      stakeAmount?: number,
+      stakeCurrency?: string,
+      maxAbsence?: number,
+      proverInstructions?: string,
+      endDate?: Date,
+    ) => {
       if (!user || !routinesCol) return
       const id = doc(routinesCol).id
       const payload: Routine = {
@@ -49,6 +57,11 @@ export function useRoutineOperations() {
         streak: 0,
         maxStreak: 0,
         completedDates: [],
+        stakeAmount: stakeAmount ?? undefined,
+        stakeCurrency: stakeCurrency ?? undefined,
+        maxAbsence: maxAbsence ?? undefined,
+        proverInstructions: proverInstructions ?? undefined,
+        endDate: endDate ?? undefined,
         starred: false,
       }
       await setDoc(doc(routinesCol, id), payload)

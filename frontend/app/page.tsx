@@ -238,8 +238,8 @@ export default function TodoApp() {
                 onAddTask={(text, amount, currency, instructions, dueDate) =>
                   todoOps.addTodo(text, "today", amount, currency, instructions, dueDate)
                 }
-                onAddRoutine={(name, type, amount, currency, maxAbs, instructions) =>
-                  routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions)
+                onAddRoutine={(name, type, amount, currency, maxAbs, instructions, endDate) =>
+                  routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions, endDate)
                 }
               />
               </div>
