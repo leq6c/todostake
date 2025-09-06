@@ -7,9 +7,17 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MobileHeader } from "@/components/ui/mobile-header"
 import { PageHeader } from "@/components/ui/page-header"
+import { ActionButton } from "@/components/ui/action-button"
+import { Clock, X, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface HomeDexProps {
-  onAddTask: (text: string, stakeAmount?: number, stakeCurrency?: string, instructions?: string) => void
+  onAddTask: (
+    text: string,
+    stakeAmount?: number,
+    stakeCurrency?: string,
+    instructions?: string,
+    dueDate?: Date,
+  ) => void
   onAddRoutine: (
     name: string,
     type: "daily" | "weekly" | "monthly",
@@ -28,12 +36,21 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
   const [stakeCurrency, setStakeCurrency] = useState("SOL")
   const [instructions, setInstructions] = useState("")
   const [maxAbsence, setMaxAbsence] = useState("")
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(null)
 
   const submit = () => {
     if (!text.trim()) return
     if (type === "task") {
       const amt = Number.parseFloat(stakeAmount)
-      onAddTask(text.trim(), isNaN(amt) || amt <= 0 ? undefined : amt, stakeCurrency, instructions.trim() || undefined)
+      onAddTask(
+        text.trim(),
+        isNaN(amt) || amt <= 0 ? undefined : amt,
+        stakeCurrency,
+        instructions.trim() || undefined,
+        selectedDueDate ?? undefined,
+      )
     } else {
       const amt = Number.parseFloat(stakeAmount)
       const maxAbs = Number.parseInt(maxAbsence)
@@ -50,6 +67,8 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
     setStakeAmount("")
     setInstructions("")
     setMaxAbsence("")
+    setSelectedDueDate(null)
+    setShowDatePicker(false)
   }
 
   return (
@@ -115,6 +134,62 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
               </div>
 
               <div className="gap-2 flex-1">
+                {type === "task" && (
+                  <div className="space-y-2 relative">
+                    {selectedDueDate ? (
+                      <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">Due {selectedDueDate.toLocaleDateString()}</span>
+                        </div>
+                        <button
+                          onClick={() => setSelectedDueDate(null)}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <ActionButton icon={<Clock className="h-4 w-4" />} onClick={() => setShowDatePicker(true)}>
+                        Add due date
+                      </ActionButton>
+                    )}
+
+                    {showDatePicker && (
+                      <div className="absolute z-50 top-full left-0 mt-2 w-80 p-4 border border-border rounded-lg bg-card shadow-xl space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <h4 className="font-medium">
+                            {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                          </h4>
+                          <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-xs text-muted-foreground text-center">
+                          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                            <div key={day} className="h-6 flex items-center justify-center font-medium">
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {renderCalendar(currentDate, (date) => {
+                            setSelectedDueDate(date)
+                            setShowDatePicker(false)
+                          })}
+                        </div>
+                        <div className="flex justify-end">
+                          <Button size="sm" variant="outline" onClick={() => setShowDatePicker(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {type !== "task" && (
                   <div>
                     <div className="text-xs text-foreground mb-1">Maximum Absence (days)</div>
@@ -142,4 +217,34 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
       </div>
     </div>
   )
+}
+// Calendar helpers
+function getDaysInMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+}
+function getFirstDayOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+}
+function renderCalendar(currentDate: Date, onSelect: (d: Date) => void) {
+  const daysInMonth = getDaysInMonth(currentDate)
+  const firstDay = getFirstDayOfMonth(currentDate)
+  const today = new Date()
+  const cells: JSX.Element[] = []
+  for (let i = 0; i < firstDay; i++) {
+    cells.push(<div key={`empty-${i}`} className="h-8" />)
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    const isToday = date.toDateString() === today.toDateString()
+    cells.push(
+      <button
+        key={day}
+        className={`h-8 text-xs rounded hover:bg-muted transition-colors ${isToday ? "bg-muted text-foreground" : ""}`}
+        onClick={() => onSelect(date)}
+      >
+        {day}
+      </button>,
+    )
+  }
+  return cells
 }

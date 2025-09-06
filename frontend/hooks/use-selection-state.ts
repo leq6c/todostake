@@ -28,6 +28,7 @@ export function useSelectionState({
       setRightPanelOpen(false)
       setSelectedTodo(null)
     } else {
+      setRightPanelOpen(false)
       setSelectedTodo(null)
     }
   }
@@ -46,6 +47,7 @@ export function useSelectionState({
       setSelectedTodo(null)
       setSelectedRoutineId(null)
     } else {
+      setRightPanelOpen(false)
       setSelectedTodo(null)
       setSelectedRoutineId(null)
     }

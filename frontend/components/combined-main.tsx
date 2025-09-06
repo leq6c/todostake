@@ -220,7 +220,12 @@ export function CombinedMain({
         )
       })()}
 
-      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onDeselectTodo()
+        }}
+      >
         <div className="w-full space-y-2">
           {incompleteTodos.map((todo) => (
             <TodoItem key={`todo-${todo.id}`} todo={todo} />

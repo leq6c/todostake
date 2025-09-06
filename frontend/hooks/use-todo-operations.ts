@@ -91,6 +91,7 @@ export function useTodoOperations() {
       stakeAmount?: number,
       stakeCurrency?: string,
       proverInstructions?: string,
+      dueDate?: Date,
     ) => {
       if (!user || !userTodosCol) return
       const now = new Date()
@@ -110,6 +111,9 @@ export function useTodoOperations() {
       }
       if (proverInstructions && proverInstructions.trim()) {
         payload.proverInstructions = proverInstructions.trim()
+      }
+      if (dueDate instanceof Date) {
+        payload.dueDate = dueDate
       }
       // Behavior based on current view
       if (activeList === "today") {

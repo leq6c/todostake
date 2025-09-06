@@ -202,22 +202,30 @@ export default function TodoApp() {
           {/* Sidebar spacer to keep main content centered to the right of sidebar */}
           <div className="hidden md:block shrink-0" style={{ width: `${uiState.sidebarWidth}px` }} />
 
-          <div className={`flex-1 flex h-full ${uiState.rightPanelOpen && appState.activeList !== "home" ? "md:mr-80" : ""}`}>
+        <div
+          className={`flex-1 flex h-full ${
+            uiState.rightPanelOpen &&
+            appState.activeList !== "home" &&
+            (appState.selectedTodo || appState.selectedRoutineId)
+              ? "md:mr-80"
+              : ""
+          }`}
+        >
             {appState.activeList === "reliability" ? (
               <div className="flex-1 flex flex-col min-h-0 relative">
                 <ReliabilityChartPage onMenuClick={handleMenuClick} />
               </div>
             ) : appState.activeList === "home" ? (
               <div className="flex-1 flex flex-col min-h-0 relative">
-                <HomeDex
-                  onMenuClick={handleMenuClick}
-                  onAddTask={(text, amount, currency, instructions) =>
-                    todoOps.addTodo(text, "today", amount, currency, instructions)
-                  }
-                  onAddRoutine={(name, type, amount, currency, maxAbs, instructions) =>
-                    routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions)
-                  }
-                />
+              <HomeDex
+                onMenuClick={handleMenuClick}
+                onAddTask={(text, amount, currency, instructions, dueDate) =>
+                  todoOps.addTodo(text, "today", amount, currency, instructions, dueDate)
+                }
+                onAddRoutine={(name, type, amount, currency, maxAbs, instructions) =>
+                  routineOps.addRoutine(name, type, amount, currency, maxAbs, instructions)
+                }
+              />
               </div>
             ) : (
               <CombinedMain
@@ -244,43 +252,46 @@ export default function TodoApp() {
             )}
           </div>
 
-          {uiState.rightPanelOpen && appState.activeList !== "reliability" && appState.activeList !== "home" && (
-            <div className="absolute right-0 top-0 bottom-0 z-30">
-              {appState.selectedTodo ? (
-                <TodoDetailPanel
-                  todo={appState.selectedTodo}
-                  onClose={selectionState.closeRightPanel}
-                  onUpdate={todoOps.updateTodo}
-                  onDelete={todoOps.deleteTodo}
-                  onToggle={todoOps.toggleTodo}
-                />
-              ) : appState.selectedRoutineId ? (
-                <RoutineDetailPanel
-                  routine={
-                    appState.selectedRoutineId
-                      ? routineOps.routines.find((r) => r.id === appState.selectedRoutineId) || null
-                      : null
-                  }
-                  onClose={selectionState.closeRightPanel}
-                  onUpdate={routineOps.updateRoutine}
-                  onDelete={routineOps.deleteRoutine}
-                  onToggle={routineOps.toggleRoutine}
-                  onStop={routineOps.stopRoutine}
-                  onPause={routineOps.pauseRoutine}
-                  // Default detail type to the routine's own type; fallback daily
-                  type={
-                    (appState.selectedRoutineId
-                      ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
-                          | "daily"
-                          | "weekly"
-                          | "monthly"
-                          | undefined)
-                      : undefined) || "daily"
-                  }
-                />
-              ) : null}
-            </div>
-          )}
+        {uiState.rightPanelOpen &&
+          appState.activeList !== "reliability" &&
+          appState.activeList !== "home" &&
+          (appState.selectedTodo || appState.selectedRoutineId) && (
+          <div className="absolute right-0 top-0 bottom-0 z-30">
+            {appState.selectedTodo ? (
+              <TodoDetailPanel
+                todo={appState.selectedTodo}
+                onClose={selectionState.closeRightPanel}
+                onUpdate={todoOps.updateTodo}
+                onDelete={todoOps.deleteTodo}
+                onToggle={todoOps.toggleTodo}
+              />
+            ) : appState.selectedRoutineId ? (
+              <RoutineDetailPanel
+                routine={
+                  appState.selectedRoutineId
+                    ? routineOps.routines.find((r) => r.id === appState.selectedRoutineId) || null
+                    : null
+                }
+                onClose={selectionState.closeRightPanel}
+                onUpdate={routineOps.updateRoutine}
+                onDelete={routineOps.deleteRoutine}
+                onToggle={routineOps.toggleRoutine}
+                onStop={routineOps.stopRoutine}
+                onPause={routineOps.pauseRoutine}
+                // Default detail type to the routine's own type; fallback daily
+                type={
+                  (appState.selectedRoutineId
+                    ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
+                        | "daily"
+                        | "weekly"
+                        | "monthly"
+                        | undefined)
+                    : undefined) || "daily"
+                }
+              />
+            ) : null}
+          </div>
+        )}
         </div>
         </div>
       </div>
