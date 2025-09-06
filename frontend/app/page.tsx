@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import { CombinedMain } from "@/components/combined-main"
 import { HomeDex } from "@/components/home-dex"
+import { useProfile } from "@/hooks/use-profile"
 
 export default function TodoApp() {
   const { user, loading, signInWithGoogle, signInGuest, signUpWithEmail, signInWithEmail, resetPassword } = useAuth()
@@ -45,6 +46,9 @@ export default function TodoApp() {
 
   const filteredTodos = getFilteredTodos(todoOps.todos, appState.activeList)
   const todoCounts = getTodoCounts(todoOps.todos)
+  const { profile } = useProfile()
+
+  const floatingMode = profile?.floatingWindowMode ?? true
 
   const handleMouseDown = (e: React.MouseEvent) => {
     uiState.setIsResizing(true)
@@ -154,8 +158,20 @@ export default function TodoApp() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen w-full bg-[radial-gradient(circle_at_20%_10%,rgba(99,102,241,0.08),transparent_60%),radial-gradient(circle_at_80%_90%,rgba(56,189,248,0.08),transparent_60%)] flex items-center justify-center p-3 md:p-6">
-        <div className="relative w-full max-w-7xl h-[85vh] md:h-[88vh] rounded-2xl bg-card/95 ring-1 ring-border/50 shadow-2xl overflow-hidden">
+      <div
+        className={
+          floatingMode
+            ? "min-h-screen w-full bg-[radial-gradient(circle_at_20%_10%,rgba(99,102,241,0.08),transparent_60%),radial-gradient(circle_at_80%_90%,rgba(56,189,248,0.08),transparent_60%)] flex items-center justify-center p-3 md:p-6"
+            : "min-h-screen w-full bg-background"
+        }
+      >
+        <div
+          className={
+            floatingMode
+              ? "relative w-full max-w-7xl h-[85vh] md:h-[88vh] rounded-2xl bg-card/95 ring-1 ring-border/50 shadow-2xl overflow-hidden"
+              : "relative w-full h-screen md:h-screen bg-background overflow-hidden"
+          }
+        >
         <div className="md:hidden absolute top-4 left-4 z-50">
           <Button
             variant="ghost"

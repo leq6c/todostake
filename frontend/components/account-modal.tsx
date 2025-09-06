@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { LogOut, User, Shield, Key, Wallet, Copy, ExternalLink } from "lucide-react"
+import { LogOut, User, Shield, Key, Wallet, Copy, ExternalLink, Monitor } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useProfile } from "@/hooks/use-profile"
 
@@ -78,6 +78,27 @@ export function AccountModal() {
       </div>
 
       <Separator />
+
+      {/* Display Settings Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Monitor className="h-4 w-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium">Display</h4>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-xs">Floating window mode</Label>
+              <p className="text-xs text-muted-foreground">Show app as centered floating window instead of full screen</p>
+            </div>
+            <Switch
+              checked={profile?.floatingWindowMode ?? true}
+              onCheckedChange={(checked) => updateProfile({ floatingWindowMode: checked })}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Wallet Settings Section */}
       <div className="space-y-3">

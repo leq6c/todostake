@@ -3,6 +3,8 @@
 import type React from "react"
 import { createContext, useContext, useState, type ReactNode } from "react"
 import { GenericBubbleModal } from "../ui/generic-bubble-modal"
+import { X } from "lucide-react"
+import { useProfile } from "@/hooks/use-profile"
 import { AccountModal } from "../account-modal"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -43,6 +45,7 @@ interface ModalProviderProps {
 }
 
 export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
+  const { profile } = useProfile()
   const [modalConfig, setModalConfig] = useState<ModalConfig | null>(null)
   const [chatMessage, setChatMessage] = useState("")
   const [chatHistory, setChatHistory] = useState<Array<{ role: "user" | "ai"; message: string }>>([])
@@ -228,16 +231,33 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     <ModalContext.Provider value={{ showModal, hideModal, isModalOpen: !!modalConfig }}>
       {children}
       {modalConfig && (
-        <GenericBubbleModal
-          isOpen={true}
-          onClose={hideModal}
-          position={modalConfig.position}
-          arrowPosition={modalConfig.arrowPosition}
-          width="w-96"
-          height="h-auto"
-        >
-          {renderModalContent()}
-        </GenericBubbleModal>
+        // If floatingWindowMode is unset or true, use floating bubble modal; otherwise use full-screen overlay
+        (profile?.floatingWindowMode ?? true) ? (
+          <GenericBubbleModal
+            isOpen={true}
+            onClose={hideModal}
+            position={modalConfig.position}
+            arrowPosition={modalConfig.arrowPosition}
+            width="w-96"
+            height="h-auto"
+          >
+            {renderModalContent()}
+          </GenericBubbleModal>
+        ) : (
+          <>
+            <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={hideModal} />
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+              <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                <div className="flex items-center justify-end p-2 border-b border-border">
+                  <Button variant="ghost" size="sm" onClick={hideModal} className="h-8 w-8 p-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-auto">{renderModalContent()}</div>
+              </div>
+            </div>
+          </>
+        )
       )}
     </ModalContext.Provider>
   )

@@ -30,6 +30,7 @@ export function useProfile() {
           reliabilityScore: 87,
           reliabilityHistory: [],
           walletConnected: false,
+          floatingWindowMode: true,
         }
         void setDoc(ref, initial, { merge: true })
         setProfile(initial)
@@ -49,4 +50,3 @@ export function useProfile() {
 
   return { profile, loading, updateProfile }
 }
-

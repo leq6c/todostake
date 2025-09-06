@@ -77,6 +77,8 @@ export interface UserProfile {
   reliabilityHistory: ReliabilityEntry[]
   walletAddress?: string
   walletConnected: boolean
+  // UI preference: when true, use floating bubble modals; when false, use full-screen modals
+  floatingWindowMode?: boolean
 }
 
 export interface ReliabilityEntry {
