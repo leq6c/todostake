@@ -136,6 +136,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
               <div className="gap-2 flex-1">
                 {type === "task" && (
                   <div className="space-y-2 relative">
+                    <div className="text-xs text-foreground mb-1">Due date</div>
                     {selectedDueDate ? (
                       <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
                         <div className="flex items-center gap-2">

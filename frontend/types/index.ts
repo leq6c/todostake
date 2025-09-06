@@ -34,6 +34,7 @@ export interface Routine {
   stopped?: boolean
   paused?: boolean
   proverInstructions?: string
+  starred?: boolean
 }
 
 export interface ChatMessage {

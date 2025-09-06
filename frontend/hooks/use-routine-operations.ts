@@ -49,6 +49,7 @@ export function useRoutineOperations() {
         streak: 0,
         maxStreak: 0,
         completedDates: [],
+        starred: false,
       }
       await setDoc(doc(routinesCol, id), payload)
     },
@@ -133,5 +134,15 @@ export function useRoutineOperations() {
     [user, routinesCol],
   )
 
-  return { routines, loading, addRoutine, updateRoutine, deleteRoutine, toggleRoutine, stopRoutine, pauseRoutine }
+  const toggleStar = useCallback(
+    async (id: string) => {
+      if (!user || !routinesCol) return
+      const current = routines.find((r) => r.id === id)
+      if (!current) return
+      await updateDoc(doc(routinesCol, id), { starred: !current.starred })
+    },
+    [user, routinesCol, routines],
+  )
+
+  return { routines, loading, addRoutine, updateRoutine, deleteRoutine, toggleRoutine, stopRoutine, pauseRoutine, toggleStar }
 }

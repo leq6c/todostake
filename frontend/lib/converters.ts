@@ -71,6 +71,7 @@ export const routineConverter: FirestoreDataConverter<Routine> = {
       stopped: !!r.stopped,
       paused: !!r.paused,
       proverInstructions: r.proverInstructions ?? null,
+      starred: !!r.starred,
     }
   },
   fromFirestore(snapshot: QueryDocumentSnapshot): Routine {
@@ -90,6 +91,7 @@ export const routineConverter: FirestoreDataConverter<Routine> = {
       stopped: !!data.stopped,
       paused: !!data.paused,
       proverInstructions: data.proverInstructions ?? undefined,
+      starred: !!data.starred,
     }
   },
 }

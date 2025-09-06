@@ -253,8 +253,12 @@ export function RoutineDetailPanel({
           variant={isMaxAbsenceExceeded ? "danger" : "default"}
         />
 
-        <button className="text-muted-foreground hover:text-yellow-500 transition-colors">
-          <Star className="h-4 w-4" />
+        <button
+          className={`transition-colors ${routine.starred ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
+          onClick={() => onUpdate(routine.id, { starred: !routine.starred })}
+          title={routine.starred ? "Unstar" : "Star"}
+        >
+          <Star className={`h-4 w-4 ${routine.starred ? "fill-current" : ""}`} />
         </button>
 
         <div className="flex items-center gap-1 text-muted-foreground">

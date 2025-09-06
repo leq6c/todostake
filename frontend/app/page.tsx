@@ -262,6 +262,7 @@ export default function TodoApp() {
                 routines={routineOps.routines}
                 addRoutine={routineOps.addRoutine}
                 toggleRoutine={routineOps.toggleRoutine}
+                toggleRoutineStar={routineOps.toggleStar}
                 selectedRoutineId={appState.selectedRoutineId}
                 onSelectRoutine={selectionState.selectRoutine}
               />
@@ -275,7 +276,7 @@ export default function TodoApp() {
           <div className="absolute right-0 top-0 bottom-0 z-30">
             {appState.selectedTodo ? (
               <TodoDetailPanel
-                todo={appState.selectedTodo}
+                todo={todoOps.todos.find((t) => t.id === appState.selectedTodo?.id) || appState.selectedTodo}
                 onClose={selectionState.closeRightPanel}
                 onUpdate={todoOps.updateTodo}
                 onDelete={todoOps.deleteTodo}

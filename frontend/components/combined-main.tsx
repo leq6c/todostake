@@ -34,6 +34,7 @@ interface CombinedMainProps {
   routines: Routine[]
   addRoutine: (name: string, type: Routine["type"]) => void
   toggleRoutine: (id: string) => void
+  toggleRoutineStar: (id: string) => void
   selectedRoutineId?: string | null
   onSelectRoutine: (id: string | null) => void
 }
@@ -54,6 +55,7 @@ export function CombinedMain({
   routines,
   addRoutine,
   toggleRoutine,
+  toggleRoutineStar,
   selectedRoutineId,
   onSelectRoutine,
 }: CombinedMainProps) {
@@ -162,14 +164,33 @@ export function CombinedMain({
               />
             </div>
             <div className="flex-1 flex flex-col">
-              <span className={`text-sm font-medium ${isInactive ? "line-through" : ""}`}>
-                {routine.name}
-                {routine.stakeAmount && <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-medium ${isInactive ? "line-through" : ""}`}>{routine.name}</span>
+                <span className="text-[11px] text-muted-foreground capitalize">
+                  {routine.type.charAt(0).toUpperCase() + routine.type.slice(1)}
+                </span>
+                {routine.stakeAmount && (
+                  <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />
+                )}
+              </div>
               <StreakVisualization streakData={streakData} maxAbsence={routine.maxAbsence} className="mt-2 mb-1" />
             </div>
           </div>
-          <span className="text-xs text-muted-foreground">{routine.streak} day streak</span>
+          <div className="flex items-center gap-1 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleRoutineStar(routine.id)
+              }}
+              className={`h-7 px-2 transition-colors ${routine.starred ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
+              title={routine.starred ? "Unstar" : "Star"}
+            >
+              <Star className={`h-4 w-4 ${routine.starred ? "fill-current" : ""}`} />
+            </Button>
+          </div>
+          {/*<span className="text-xs text-muted-foreground">{routine.streak} day streak</span>*/}
           <div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>
         </div>
       </div>
