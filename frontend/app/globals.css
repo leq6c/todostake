@@ -5,6 +5,7 @@
 @variant dark (.dark &);
 
 :root {
+  /* oklch(0.92 0 0 / 0.35)*/
   --background: oklch(0.98 0 0);
   --foreground: oklch(0.15 0 0);
   --card: oklch(1 0 0);

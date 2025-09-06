@@ -140,10 +140,10 @@ export function CombinedMain({
     const isInactive = !!routine.stopped || !!routine.paused
     const streakData = generateStreakData(routine)
     return (
-      <div
-        className={`border rounded-lg py-1.5 px-2 hover:bg-muted/50 transition-colors cursor-pointer ${
-          isInactive ? "opacity-60" : ""
-        } ${isSelected ? "border-foreground/20 bg-muted/30" : "border-border"}`}
+      <div data-role="routine-item"
+        className={`border rounded-lg py-2.5 px-3 transition-colors cursor-pointer shadow-xs ${
+          isInactive ? "opacity-70" : ""
+        } ${isSelected ? "border-foreground/30 bg-accent/50" : "border-1 hover:bg-card/60"}`}
         onClick={(e) => {
           e.stopPropagation()
           onSelectRoutine(routine.id)
@@ -170,9 +170,9 @@ export function CombinedMain({
   }
 
   const TodoItem = ({ todo, isCompleted = false }: { todo: Todo; isCompleted?: boolean }) => (
-    <div
-      className={`py-1.5 px-2 ${isCompleted ? "opacity-60" : ""} bg-card rounded-lg border w-full cursor-pointer transition-colors ${
-        selectedTodoId === todo.id ? "border-foreground/30 bg-accent/50" : "border-border hover:bg-card/60"
+    <div data-role="todo-item"
+      className={`py-2.5 px-3 ${isCompleted ? "opacity-70" : ""} rounded-lg border w-full cursor-pointer transition-colors shadow-xs ${
+        selectedTodoId === todo.id ? "border-foreground/30 bg-accent/50" : "border-1 border-border hover:bg-card/60"
       }`}
       onClick={() => onSelectTodo(todo)}
     >
@@ -185,7 +185,7 @@ export function CombinedMain({
           }}
         />
         <div className="flex-1 flex flex-col">
-          <span className={`text-card-foreground text-sm ${isCompleted ? "line-through" : ""}`}>{todo.text}</span>
+          <span className={`text-foreground text-sm font-medium ${isCompleted ? "line-through" : ""}`}>{todo.text}</span>
           <div className="text-xs text-muted-foreground">
             {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : activeList === "today" ? "Today" : activeList === "planned" ? "Planned" : "Task"}
           </div>
@@ -208,8 +208,15 @@ export function CombinedMain({
     </div>
   )
 
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-role="todo-item"], [data-role="routine-item"]')) {
+      onDeselectTodo()
+    }
+  }
+
   return (
-    <div className="flex-1 flex flex-col min-h-0 relative h-full" onClick={(e) => e.currentTarget === e.target && onDeselectTodo()}>
+    <div className="flex-1 flex flex-col min-h-0 relative h-full" onClick={handleBackgroundClick}>
       <MobileHeader title={getListTitle()} onMenuClick={onMenuClick} />
 
       {(() => {
@@ -221,10 +228,8 @@ export function CombinedMain({
       })()}
 
       <div
-        className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onDeselectTodo()
-        }}
+        className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6 flex justify-center"
+        onClick={handleBackgroundClick}
       >
         <div className="w-full space-y-2">
           {incompleteTodos.map((todo) => (
@@ -264,7 +269,7 @@ export function CombinedMain({
       </div>
 
       {/* Bottom-fixed input area within layout (non-scrolling) */}
-      <div className="p-3 pt-0 bg-background/95 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+      <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur" onClick={(e) => e.stopPropagation()}>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             {(["task", "daily", "weekly", "monthly"] as const).map((t) => (
@@ -287,11 +292,11 @@ export function CombinedMain({
                 value={newItemText}
                 onChange={(e) => setNewItemText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmitNew()}
-                className="pl-11 h-12 text-base border-0 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none shadow-none"
+                className="pl-11 h-12 text-base"
               />
             </div>
           </div>
-          {newType === "task" && (
+          {newType === "task-------" && (
             <div className="flex gap-2 items-center">
               <span className="text-xs text-muted-foreground">Stake</span>
               <Input
@@ -299,10 +304,10 @@ export function CombinedMain({
                 type="number"
                 value={newStakeAmount}
                 onChange={(e) => setNewStakeAmount(e.target.value)}
-                className="w-28 h-10 text-sm border-0 focus:ring-0 focus-visible:ring-0 outline-none"
+                className="w-28 h-10 text-sm"
               />
               <Select value={newStakeCurrency} onValueChange={setNewStakeCurrency}>
-                <SelectTrigger className="w-24 h-10 border-0 focus:ring-0 focus-visible:ring-0">
+                <SelectTrigger className="w-24 h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -315,7 +320,7 @@ export function CombinedMain({
                 placeholder="Instructions (optional)"
                 value={newProverInstructions}
                 onChange={(e) => setNewProverInstructions(e.target.value)}
-                className="flex-1 h-10 text-sm border-0 focus:ring-0 focus-visible:ring-0 outline-none"
+                className="flex-1 h-10 text-sm"
               />
             </div>
           )}

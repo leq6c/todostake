@@ -23,7 +23,7 @@ export default function RootLayout({
       <head>
         <style>{`
 html {
-  font-family: ${GeistSans.style.fontFamily};
+  font-family: ${GeistSans.style.fontFamily}, "ヒラギノ角ゴシック";
   --font-sans: ${GeistSans.style.fontFamily};
   --font-mono: ${GeistMono.style.fontFamily};
 }

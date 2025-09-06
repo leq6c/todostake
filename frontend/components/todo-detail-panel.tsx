@@ -387,7 +387,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
               toast({ title: "Memo saved" })
             }
           }}
-          className="min-h-[100px] resize-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none focus-visible:border-none"
+          className="min-h-[100px] resize-none focus-visible:ring-2 focus-visible:ring-ring/30 border border-input bg-background rounded-md"
         />
       </div>
 

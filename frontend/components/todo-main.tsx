@@ -127,14 +127,14 @@ export function TodoMain({
   const TodoItem = ({ todo, isCompleted = false }: { todo: Todo; isCompleted?: boolean }) => (
     <div
       className={`py-1.5 px-2 ${isCompleted ? "opacity-60" : ""} bg-card rounded-lg border w-full cursor-pointer transition-colors ${
-        selectedTodoId === todo.id ? "border-foreground/30 bg-accent/50" : "border-border hover:bg-card/60"
+        selectedTodoId === todo.id ? "border-foreground/30 bg-accent/50" : "border-1 border-border hover:bg-card/60"
       }`}
       onClick={() => onSelectTodo(todo)}
     >
       <div className="flex items-center gap-2">
         <CircularCheckbox checked={todo.completed} onClick={(e) => handleCheckboxClick(e, todo.id, todo.completed)} />
         <div className="flex-1 flex flex-col">
-          <span className={`text-card-foreground text-sm ${isCompleted ? "line-through" : ""}`}>{todo.text}</span>
+          <span className={`text-card-foreground text-sm font-medium ${isCompleted ? "line-through" : ""}`}>{todo.text}</span>
           <div className="text-xs text-muted-foreground">{getTodoDescription(todo)}</div>
         </div>
         {todo.stakeAmount && todo.stakeAmount > 0 && (
@@ -166,7 +166,7 @@ export function TodoMain({
 
       {/* Todo List */}
       <div
-        className="flex-1 overflow-y-auto p-3 md:p-4"
+        className="flex-1 overflow-y-auto p-3 md:p-4 flex justify-center"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onDeselectTodo()

@@ -52,9 +52,9 @@ export function TodoSidebar({
   ]
 
   return (
-    <div className="w-full bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+    <div className="w-full bg-sidebar border-r border-sidebar-border/70 flex flex-col h-full">
       {/* User Profile */}
-      <div className="p-4 border-b border-sidebar-border">
+      <div className="p-4 border-b border-sidebar-border/70">
         <div
           className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
           onClick={handleAccountClick}
@@ -72,7 +72,7 @@ export function TodoSidebar({
       </div>
 
       {/* Theme Toggle */}
-      <div className="px-4 py-3 border-b border-sidebar-border">
+      <div className="px-4 py-3 border-b border-sidebar-border/70">
         <div className="flex items-center gap-1">
           {mounted && (
             <>
@@ -106,7 +106,7 @@ export function TodoSidebar({
               <Button
                 key={list.id}
                 variant={activeList === list.id ? "secondary" : "ghost"}
-                className="w-full justify-start gap-2 h-8 text-sm"
+                className="w-full justify-start gap-2 h-8 text-sm hover:bg-muted/30"
                 onClick={() => setActiveList(list.id)}
               >
                 <Icon className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function TodoSidebar({
 
           <Button
             variant={activeList === "reliability" ? "secondary" : "ghost"}
-            className="w-full justify-start gap-2 h-8 text-sm"
+            className="w-full justify-start gap-2 h-8 text-sm hover:bg-muted/30"
             onClick={() => setActiveList("reliability")}
           >
             <TrendingUp className="h-4 w-4" />

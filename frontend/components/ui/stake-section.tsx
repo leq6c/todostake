@@ -81,7 +81,7 @@ export function StakeSection({
       )}
 
       {/* Prover Instruction */}
-      <div className="space-y-2 pt-2 border-t border-border/50">
+      <div className="space-y-2 pt-2 border-t border-border/50 hidden">
         <label className="text-sm font-medium text-foreground">Prover Instruction</label>
         <p className="text-xs text-muted-foreground">
           Add instructions to tighten conditions and avoid cheating by future you

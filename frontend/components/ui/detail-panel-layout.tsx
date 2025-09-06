@@ -20,12 +20,12 @@ export function DetailPanelLayout({
   className = "",
 }: DetailPanelLayoutProps) {
   return (
-    <div className={`w-80 bg-background border-l border-border flex flex-col h-full ${className}`}>
+    <div className={`w-80 bg-card/95 border-l border-border/70 flex flex-col h-full shadow-lg ${className}`}>
       {/* Content */}
       <div className="flex-1 p-4 space-y-6 overflow-y-auto overflow-x-hidden">{children}</div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border flex justify-between items-center">
+      <div className="p-4 border-t border-border/70 flex justify-between items-center bg-card/95">
         <Button variant="ghost" size="sm" onClick={onClose}>
           <ChevronRight className="h-4 w-4" />
         </Button>

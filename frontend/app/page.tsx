@@ -256,7 +256,7 @@ export default function TodoApp() {
                 toggleStar={todoOps.toggleStar}
                 onSelectTodo={selectionState.selectTodo}
                 selectedTodoId={appState.selectedTodo?.id}
-                onDeselectTodo={selectionState.deselectTodo}
+                onDeselectTodo={selectionState.closeRightPanel}
                 onMenuClick={handleMenuClick}
                 // routines
                 routines={routineOps.routines}
