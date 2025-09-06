@@ -23,6 +23,16 @@ export function StreakVisualization({ streakData, maxAbsence, className = "" }: 
 
   return (
     <div className={`flex flex-wrap gap-1 ${className}`}>
+      {/* if streakData.length < 16, add leading empty squares */}
+      {streakData.length < 16 && (
+        Array.from({ length: 16 - streakData.length }).map((_, index) => (
+          <div
+            key={`empty-${index}`}
+            className="w-3 h-3 min-w-3 min-h-3 rounded-sm bg-gray-300 dark:bg-gray-800"
+          />
+        ))
+      )
+      }
       {streakData.map((data, index) => (
         <div
           key={data.date}

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Star } from "lucide-react"
+import { Calendar1Icon, CalendarIcon, Plus, Star } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -141,58 +141,75 @@ export function CombinedMain({
     const streakData = generateStreakData(routine)
     return (
       <div data-role="routine-item"
-        className={`border rounded-lg py-2.5 px-3 transition-colors cursor-pointer shadow-xs ${
+        className={`rounded-lg px-3 transition-colors cursor-pointer ${
           isInactive ? "opacity-70" : ""
-        } ${isSelected ? "border-foreground/30 bg-accent/50" : "border-1 hover:bg-card/60"}`}
+        } ${isSelected ? "bg-accent/50 hover:bg-card-foreground/8" : "hover:bg-card-foreground/8"}`}
         onClick={(e) => {
           e.stopPropagation()
           onSelectRoutine(routine.id)
         }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between relative py-2">
           <div className="flex items-center gap-2">
-            <CircularCheckbox
-              checked={isCompletedToday}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (!isInactive) toggleRoutine(routine.id)
-              }}
-              className={isInactive ? "opacity-40" : ""}
-            />
-            <span className={`text-sm font-medium ${isInactive ? "line-through" : ""}`}>{routine.name}</span>
-            {routine.stakeAmount && <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />}
+            <div className="webkit-fill-available mt-[1px]">
+              <CircularCheckbox
+                checked={isCompletedToday}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (!isInactive) toggleRoutine(routine.id)
+                }}
+                className={isInactive ? "opacity-40" : ""}
+              />
+            </div>
+            <div className="flex-1 flex flex-col">
+              <span className={`text-sm font-medium ${isInactive ? "line-through" : ""}`}>
+                {routine.name}
+                {routine.stakeAmount && <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />}
+              </span>
+              <StreakVisualization streakData={streakData} maxAbsence={routine.maxAbsence} className="mt-2 mb-1" />
+            </div>
           </div>
           <span className="text-xs text-muted-foreground">{routine.streak} day streak</span>
+          <div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>
         </div>
-        <StreakVisualization streakData={streakData} maxAbsence={routine.maxAbsence} className="mt-2 mb-1" />
       </div>
     )
   }
 
   const TodoItem = ({ todo, isCompleted = false }: { todo: Todo; isCompleted?: boolean }) => (
     <div data-role="todo-item"
-      className={`py-2.5 px-3 ${isCompleted ? "opacity-70" : ""} rounded-lg border w-full cursor-pointer transition-colors shadow-xs ${
-        selectedTodoId === todo.id ? "border-foreground/30 bg-accent/50" : "border-1 border-border hover:bg-card/60"
+      className={`px-3 ${isCompleted ? "opacity-70" : ""} rounded-lg w-full cursor-pointer transition-colors ${
+        selectedTodoId === todo.id ? "bg-accent/50 hover:bg-card-foreground/8" : "hover:bg-card-foreground/8"
       }`}
       onClick={() => onSelectTodo(todo)}
     >
-      <div className="flex items-center gap-2">
-        <CircularCheckbox
-          checked={todo.completed}
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleTodo(todo.id)
-          }}
-        />
+      <div className="flex items-center gap-2 py-2 relative">
+        <div className="webkit-fill-available mt-[1px]">
+          <CircularCheckbox
+            checked={todo.completed}
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleTodo(todo.id)
+            }}
+          />
+        </div>
         <div className="flex-1 flex flex-col">
-          <span className={`text-foreground text-sm font-medium ${isCompleted ? "line-through" : ""}`}>{todo.text}</span>
-          <div className="text-xs text-muted-foreground">
-            {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : activeList === "today" ? "Today" : activeList === "planned" ? "Planned" : "Task"}
+          <span className={`text-foreground text-sm font-medium ${isCompleted ? "line-through" : ""}`}>
+            {todo.text}
+            {todo.stakeAmount && todo.stakeAmount > 0 && (
+              <StakeBadge amount={todo.stakeAmount} className={isCompleted ? "opacity-60" : ""} variant={"success"} />
+            )}
+          </span>
+          {/*"calendar icon"*/}
+          <div className="flex items-center mt-1">
+            <div className="text-xs text-muted-foreground mr-1">
+              <CalendarIcon strokeWidth={1.5} className="h-3.5 w-3.5" />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : activeList === "today" ? "Today" : activeList === "planned" ? "Planned" : "Task"}
+            </div>
           </div>
         </div>
-        {todo.stakeAmount && todo.stakeAmount > 0 && (
-          <StakeBadge amount={todo.stakeAmount} className={isCompleted ? "opacity-60" : ""} />
-        )}
         <Button
           variant="ghost"
           size="sm"
@@ -204,6 +221,7 @@ export function CombinedMain({
         >
           <Star className={`h-4 w-4 ${todo.starred ? "fill-current" : ""}`} />
         </Button>
+        <div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>
       </div>
     </div>
   )

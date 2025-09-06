@@ -20,7 +20,7 @@ export function StakeBadge({ amount, variant = "default", size = "sm", className
   }
 
   return (
-    <span className={`font-medium rounded-full ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}>
+    <span className={`ml-1 font-medium rounded-full ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}>
       ${amount}
     </span>
   )
