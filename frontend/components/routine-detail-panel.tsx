@@ -166,18 +166,25 @@ export function RoutineDetailPanel({
     return absenceCount
   }
 
+  // Establish calendar-normalized anchors available to subsequent calculations
+  const todayDateAnchor = new Date()
+  const todayOnly = new Date(
+    todayDateAnchor.getFullYear(),
+    todayDateAnchor.getMonth(),
+    todayDateAnchor.getDate(),
+  )
+  const created = routine.createdAt ? new Date(routine.createdAt) : null
+  const earliestCompleted = routine.completedDates.length
+    ? new Date(routine.completedDates[0] + "T00:00:00")
+    : null
+  const startBase = created ?? earliestCompleted ?? todayOnly
+  const startOnly = new Date(startBase.getFullYear(), startBase.getMonth(), startBase.getDate())
+
   const currentAbsence = calculateAbsenceStreak()
-  const daysSinceStart = (() => {
-    const today = new Date()
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const created = routine.createdAt ? new Date(routine.createdAt) : null
-    const earliestCompleted = routine.completedDates.length
-      ? new Date(routine.completedDates[0] + "T00:00:00")
-      : null
-    const startBase = created ?? earliestCompleted ?? todayOnly
-    const startOnly = new Date(startBase.getFullYear(), startBase.getMonth(), startBase.getDate())
-    return Math.max(0, Math.floor((todayOnly.getTime() - startOnly.getTime()) / (1000 * 60 * 60 * 24)))
-  })()
+  const daysSinceStart = Math.max(
+    0,
+    Math.floor((todayOnly.getTime() - startOnly.getTime()) / (1000 * 60 * 60 * 24)),
+  )
   const unitLabel = type === "daily" ? "days" : type === "weekly" ? "weeks" : "months"
   // Calendar-based unit diffs
   const monthsDiff = (a: Date, b: Date) => (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth())
