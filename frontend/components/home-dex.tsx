@@ -82,9 +82,11 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
     <div className="h-full flex flex-col">
       <MobileHeader title="Home" onMenuClick={onMenuClick} />
       <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col">
-        <PageHeader
-          title="Home"
-        />
+        <div className="mt-6 p-3 md:p-4">
+          <PageHeader
+            title="Home"
+          />
+        </div>
         {/* Centered DEX-like panel */}
         <div className="w-full h-full flex justify-start items-center mt-4 md:mt-18 flex-col">
           {/* Type toggle */}

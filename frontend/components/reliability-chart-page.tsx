@@ -60,7 +60,9 @@ export function ReliabilityChartPage({ onMenuClick }: ReliabilityChartPageProps)
     <div className="h-full flex flex-col">
       <MobileHeader title="Reliability" onMenuClick={onMenuClick} />
 
-      <PageHeader title="Reliability" />
+      <div className="mt-6 p-3 md:p-4">
+        <PageHeader title="Reliability" />
+      </div>
 
       <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6">
         <div className="space-y-2">

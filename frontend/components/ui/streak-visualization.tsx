@@ -14,7 +14,7 @@ export function StreakVisualization({ streakData, maxAbsence, className = "" }: 
         .filter((d) => !d.completed).length
 
       if (recentMissed >= maxAbsence) {
-        return data.completed ? "bg-red-500 dark:bg-red-500" : "bg-red-300 dark:bg-red-700"
+        return data.completed ? "bg-red-500 dark:bg-red-500" : "bg-red-400 dark:bg-red-700"
       }
     }
 

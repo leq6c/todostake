@@ -261,111 +261,116 @@ export function CombinedMain({
     <div className="flex-1 flex flex-col min-h-0 relative h-full" onClick={handleBackgroundClick}>
       <MobileHeader title={getListTitle()} onMenuClick={onMenuClick} />
 
-      {(() => {
-        const openCount = incompleteTodos.length + openRoutines.length
-        const completedCount = completedTodos.length + completedRoutinesToday.length
-        return (
-          <PageHeader title={getListTitle()} subtitle={`${openCount} remaining, ${completedCount} completed`} />
-        )
-      })()}
-
       <div
-        className="flex-1 overflow-y-auto p-3 md:p-4 space-y-6 flex justify-center"
+        className="flex-1 overflow-y-auto space-y-6 flex justify-center"
         onClick={handleBackgroundClick}
       >
-        <div className="w-full space-y-2">
-          {incompleteTodos.map((todo) => (
-            <TodoItem key={`todo-${todo.id}`} todo={todo} />
-          ))}
-          {openRoutines.map((r) => (
-            <RoutineItem key={`routine-${r.id}`} routine={r} />
-          ))}
-
-          {inactiveRoutines.length > 0 && (
-            <CollapsibleSection title="Paused/Stopped" count={inactiveRoutines.length}>
-              {inactiveRoutines.map((r) => (
-                <RoutineItem key={`inactive-${r.id}`} routine={r} />
-              ))}
-            </CollapsibleSection>
-          )}
-
-          {(completedTodos.length + completedRoutinesToday.length) > 0 && (
-            <CollapsibleSection
-              title="Completed"
-              count={completedTodos.length + completedRoutinesToday.length}
-              defaultOpen={activeList === "today"}
-            >
-              {completedTodos.map((todo) => (
-                <TodoItem key={`ctodo-${todo.id}`} todo={todo} isCompleted />
-              ))}
-              {completedRoutinesToday.map((r) => (
-                <RoutineItem key={`croutine-${r.id}`} routine={r} />
-              ))}
-            </CollapsibleSection>
-          )}
-
-          {incompleteTodos.length === 0 && openRoutines.length === 0 && (
-            <EmptyState title="All clear!" description="Add a new item to get started." />
-          )}
-        </div>
-      </div>
-
-      {/* Bottom-fixed input area within layout (non-scrolling) */}
-      <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur" onClick={(e) => e.stopPropagation()}>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            {(["task", "daily", "weekly", "monthly"] as const).map((t) => (
-              <Button
-                key={t}
-                variant={newType === t ? "default" : "ghost"}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setNewType(t)}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </Button>
+        <div className="w-full space-y-2 flex flex-col">
+          <div className="sticky top-0 z-1 mt-6 supports-[backdrop-filter]:backdrop-blur p-3 md:p-4">
+            {(() => {
+              const openCount = incompleteTodos.length + openRoutines.length
+              const completedCount = completedTodos.length + completedRoutinesToday.length
+              return (
+                <PageHeader title={getListTitle()} subtitle={`${openCount} remaining, ${completedCount} completed`} />
+              )
+            })()}
+          </div>
+          <div className="p-3 md:p-4">
+            {incompleteTodos.map((todo) => (
+              <TodoItem key={`todo-${todo.id}`} todo={todo} />
             ))}
+            {openRoutines.map((r) => (
+              <RoutineItem key={`routine-${r.id}`} routine={r} />
+            ))}
+
+            {inactiveRoutines.length > 0 && (
+              <CollapsibleSection title="Paused/Stopped" count={inactiveRoutines.length}>
+                {inactiveRoutines.map((r) => (
+                  <RoutineItem key={`inactive-${r.id}`} routine={r} />
+                ))}
+              </CollapsibleSection>
+            )}
+
+            {(completedTodos.length + completedRoutinesToday.length) > 0 && (
+              <CollapsibleSection
+                title="Completed"
+                count={completedTodos.length + completedRoutinesToday.length}
+                defaultOpen={activeList === "today"}
+              >
+                {completedTodos.map((todo) => (
+                  <TodoItem key={`ctodo-${todo.id}`} todo={todo} isCompleted />
+                ))}
+                {completedRoutinesToday.map((r) => (
+                  <RoutineItem key={`croutine-${r.id}`} routine={r} />
+                ))}
+              </CollapsibleSection>
+            )}
+
+            {incompleteTodos.length === 0 && openRoutines.length === 0 && (
+              <EmptyState title="All clear!" description="Add a new item to get started." />
+            )}
           </div>
-          <div className="flex gap-2 items-center">
-            <div className="flex-1 relative rounded">
-              <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder={`Add a new ${newType === "task" ? "task" : newType + " routine"}...`}
-                value={newItemText}
-                onChange={(e) => setNewItemText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmitNew()}
-                className="pl-11 h-12 text-base"
-              />
+
+          <div className="flex-1"></div>
+
+          {/* Bottom-fixed input area within layout (non-scrolling) */}
+          <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur sticky bottom-0" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {(["task", "daily", "weekly", "monthly"] as const).map((t) => (
+                  <Button
+                    key={t}
+                    variant={newType === t ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setNewType(t)}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative rounded">
+                  <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    placeholder={`Add a new ${newType === "task" ? "task" : newType + " routine"}...`}
+                    value={newItemText}
+                    onChange={(e) => setNewItemText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmitNew()}
+                    className="pl-11 h-12 text-base"
+                  />
+                </div>
+              </div>
+              {newType === "task-------" && (
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-muted-foreground">Stake</span>
+                  <Input
+                    placeholder="0.00"
+                    type="number"
+                    value={newStakeAmount}
+                    onChange={(e) => setNewStakeAmount(e.target.value)}
+                    className="w-28 h-10 text-sm"
+                  />
+                  <Select value={newStakeCurrency} onValueChange={setNewStakeCurrency}>
+                    <SelectTrigger className="w-24 h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SOL">SOL</SelectItem>
+                      <SelectItem value="USDC">USDC</SelectItem>
+                      <SelectItem value="USDT">USDT</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Instructions (optional)"
+                    value={newProverInstructions}
+                    onChange={(e) => setNewProverInstructions(e.target.value)}
+                    className="flex-1 h-10 text-sm"
+                  />
+                </div>
+              )}
             </div>
           </div>
-          {newType === "task-------" && (
-            <div className="flex gap-2 items-center">
-              <span className="text-xs text-muted-foreground">Stake</span>
-              <Input
-                placeholder="0.00"
-                type="number"
-                value={newStakeAmount}
-                onChange={(e) => setNewStakeAmount(e.target.value)}
-                className="w-28 h-10 text-sm"
-              />
-              <Select value={newStakeCurrency} onValueChange={setNewStakeCurrency}>
-                <SelectTrigger className="w-24 h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SOL">SOL</SelectItem>
-                  <SelectItem value="USDC">USDC</SelectItem>
-                  <SelectItem value="USDT">USDT</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="Instructions (optional)"
-                value={newProverInstructions}
-                onChange={(e) => setNewProverInstructions(e.target.value)}
-                className="flex-1 h-10 text-sm"
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
