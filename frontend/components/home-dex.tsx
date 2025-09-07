@@ -87,10 +87,10 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
             title="Home"
           />
         </div>
-        {/* Centered DEX-like panel */}
-        <div className="w-full h-full flex justify-start items-center mt-4 md:mt-18 flex-col">
+        {/* Centered DEX-like panel (mobile-friendly) */}
+        <div className="w-full h-full flex justify-start items-stretch md:items-center mt-4 md:mt-18 flex-col px-1">
           {/* Type toggle */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-4 flex-wrap justify-center md:justify-start">
             {(["task", "daily", "weekly", "monthly"] as const).map((t) => (
               <Button
                 key={t}
@@ -118,8 +118,8 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
             </div>
 
             {/* Bottom box */}
-            <div className="rounded-xl bg-card/95 backdrop-blur-md p-4 space-y-3 flex flex-row gap-3 pt-0">
-              <div>
+            <div className="rounded-xl bg-card/95 backdrop-blur-md p-4 space-y-3 flex flex-col md:flex-row gap-3 pt-0">
+              <div className="w-full md:w-auto">
                 <div className="text-xs text-foreground mb-1">Stake</div>
                 <div className="flex flex-row gap-2 items-center">
                   <Input
@@ -165,8 +165,8 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                       </ActionButton>
                     )}
 
-                    {showDatePicker && (
-                      <div className="absolute z-50 top-full left-0 mt-2 w-80 p-4 border border-border rounded-lg bg-card shadow-xl space-y-3">
+                        {showDatePicker && (
+                      <div className="absolute z-50 top-full left-0 mt-2 w-72 max-w-[90vw] md:w-80 p-4 border border-border rounded-lg bg-card shadow-xl space-y-3">
                         <div className="flex items-center justify-between">
                           <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
                             <ChevronLeft className="h-4 w-4" />
@@ -225,7 +225,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                         )}
 
                         {showEndDatePicker && (
-                          <div className="absolute z-50 top-full left-0 mt-2 w-80 p-4 border border-border rounded-lg bg-card shadow-xl space-y-3">
+                          <div className="absolute z-50 top-full left-0 mt-2 w-72 max-w-[90vw] md:w-80 p-4 border border-border rounded-lg bg-card shadow-xl space-y-3">
                             <div className="flex items-center justify-between">
                               <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
                                 <ChevronLeft className="h-4 w-4" />
