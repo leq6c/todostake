@@ -194,7 +194,7 @@ export function CombinedMain({
             </Button>
           </div>
           {/*<span className="text-xs text-muted-foreground">{routine.streak} day streak</span>*/}
-          <div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>
+          {/*<div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>*/}
         </div>
       </div>
     )
@@ -245,7 +245,7 @@ export function CombinedMain({
         >
           <Star className={`h-4 w-4 ${todo.starred ? "fill-current" : ""}`} />
         </Button>
-        <div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>
+        {/*<div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>*/}
       </div>
     </div>
   )
