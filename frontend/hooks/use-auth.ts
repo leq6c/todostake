@@ -20,9 +20,35 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Try to prime from last known user for offline reloads
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("wb:lastUser") : null
+      if (raw) {
+        // Minimal shape sufficient for our app (uid, email, displayName, isAnonymous)
+        const cached = JSON.parse(raw)
+        if (cached?.uid) {
+          setUser(cached as unknown as User)
+          setLoading(false)
+        }
+      }
+    } catch {}
+
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setLoading(false)
+      try {
+        if (u) {
+          const payload = {
+            uid: u.uid,
+            email: u.email,
+            displayName: u.displayName,
+            isAnonymous: u.isAnonymous,
+          }
+          localStorage.setItem("wb:lastUser", JSON.stringify(payload))
+        } else {
+          localStorage.removeItem("wb:lastUser")
+        }
+      } catch {}
     })
     return () => unsub()
   }, [])
@@ -39,6 +65,9 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     await firebaseSignOut(auth)
+    try {
+      localStorage.removeItem("wb:lastUser")
+    } catch {}
   }, [])
 
   const signUpWithEmail = useCallback(async (email: string, password: string, displayName?: string) => {

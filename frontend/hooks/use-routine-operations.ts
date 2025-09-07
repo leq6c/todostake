@@ -16,6 +16,7 @@ export function useRoutineOperations() {
 
   const [routines, setRoutines] = useState<Routine[]>([])
   const [loading, setLoading] = useState(true)
+  const cacheRoutinesKey = user ? `wb:cache:${user.uid}:routines` : null
 
   const routinesCol = useMemo(
     () => (user ? collection(db, "users", user.uid, "routines").withConverter(routineConverter) : null),
@@ -28,11 +29,26 @@ export function useRoutineOperations() {
       setLoading(false)
       return
     }
+
+    // Prime from localStorage cache for offline-first UX when IndexedDB is unavailable
+    try {
+      if (cacheRoutinesKey) {
+        const raw = localStorage.getItem(cacheRoutinesKey)
+        if (raw) {
+          setRoutines(JSON.parse(raw))
+          setLoading(false)
+        }
+      }
+    } catch {}
+
     const unsub = onSnapshot(query(routinesCol), (snap) => {
       const next: Routine[] = []
       snap.forEach((d) => next.push(d.data()))
       setRoutines(next)
       setLoading(false)
+      try {
+        if (cacheRoutinesKey) localStorage.setItem(cacheRoutinesKey, JSON.stringify(next))
+      } catch {}
     })
     return () => unsub()
   }, [user, routinesCol])

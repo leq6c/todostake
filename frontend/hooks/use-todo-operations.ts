@@ -29,6 +29,9 @@ export function useTodoOperations() {
 
   const [todos, setTodos] = useState<Todo[]>([])
   const [customLists, setCustomLists] = useState<TodoList[]>([])
+  // Local cache keys
+  const cacheTodosKey = user ? `wb:cache:${user.uid}:todos` : null
+  const cacheListsKey = user ? `wb:cache:${user.uid}:lists` : null
 
   // Helpers
   const userTodosCol = useMemo(
@@ -63,10 +66,25 @@ export function useTodoOperations() {
       return
     }
 
+    // Prime from localStorage cache (for environments where Firestore persistence is unavailable)
+    try {
+      if (cacheTodosKey) {
+        const raw = localStorage.getItem(cacheTodosKey)
+        if (raw) setTodos(JSON.parse(raw))
+      }
+      if (cacheListsKey) {
+        const raw = localStorage.getItem(cacheListsKey)
+        if (raw) setCustomLists(JSON.parse(raw))
+      }
+    } catch {}
+
     const unsubTodos = onSnapshot(query(userTodosCol), (snap) => {
       const next: Todo[] = []
       snap.forEach((d) => next.push(d.data()))
       setTodos(next)
+      try {
+        if (cacheTodosKey) localStorage.setItem(cacheTodosKey, JSON.stringify(next))
+      } catch {}
     })
 
     const unsubLists = onSnapshot(query(userListsCol), (snap) => {
@@ -76,6 +94,9 @@ export function useTodoOperations() {
         next.push(d.data())
       })
       setCustomLists(next)
+      try {
+        if (cacheListsKey) localStorage.setItem(cacheListsKey, JSON.stringify(next))
+      } catch {}
     })
 
     return () => {
