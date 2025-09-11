@@ -277,7 +277,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
 
               <div className="pt-4">
                 <Button className="w-full h-11 shadow-md" onClick={submit}>
-                  {type === "task" ? "Create" : `Create`}
+                  {type === "task" ? "Pledge" : `Pledge`}
                 </Button>
               </div>
             </div>

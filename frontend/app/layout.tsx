@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Wordbond",
-  description: "Todo app",
+  title: "WordBond",
+  description: "Keep your word or lose your stake.",
   generator: "nextjs",
 }
 
