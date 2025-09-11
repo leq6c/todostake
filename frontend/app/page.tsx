@@ -168,7 +168,7 @@ export default function TodoApp() {
         <div
           className={
             floatingMode
-              ? "relative w-full max-w-7xl h-[85vh] md:h-[88vh] rounded-2xl bg-card/95 ring-1 ring-border/50 shadow-2xl overflow-hidden"
+              ? "relative w-full max-w-7xl max-h-[50rem] h-[85vh] md:h-[88vh] rounded-2xl bg-card/95 ring-1 ring-border/50 shadow-2xl overflow-hidden"
               : "relative w-full h-screen md:h-screen bg-background overflow-hidden"
           }
         >
