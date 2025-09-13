@@ -59,22 +59,35 @@ export function useTodoOperations() {
   );
 
   const fromFirestoreTodo = useCallback((id: string, data: any): Todo => {
-    const createdAt: Date =
-      data.createdAt instanceof Timestamp
-        ? data.createdAt.toDate()
-        : new Date();
-    const dueDate: Date | undefined =
-      data.dueDate instanceof Timestamp ? data.dueDate.toDate() : undefined;
+    // createdAt may be Firestore Timestamp, JS Date, ISO string, or missing
+    let createdAt: Date;
+    if (data?.createdAt instanceof Timestamp) createdAt = data.createdAt.toDate();
+    else if (data?.createdAt instanceof Date) createdAt = data.createdAt as Date;
+    else if (typeof data?.createdAt === "string") createdAt = new Date(data.createdAt);
+    else if (typeof data?.createdAt === "number") createdAt = new Date(data.createdAt);
+    else createdAt = new Date();
+
+    // dueDate normalization (Timestamp | Date | string | number | null)
+    let dueDate: Date | undefined;
+    if (data?.dueDate instanceof Timestamp) dueDate = data.dueDate.toDate();
+    else if (data?.dueDate instanceof Date) dueDate = data.dueDate as Date;
+    else if (typeof data?.dueDate === "string") dueDate = new Date(data.dueDate);
+    else if (typeof data?.dueDate === "number") dueDate = new Date(data.dueDate);
+    else dueDate = undefined;
+
     return {
       id,
-      text: data.text,
-      completed: !!data.completed,
+      text: data?.text,
+      completed: !!data?.completed,
       createdAt,
-      list: data.list || "tasks",
+      list: data?.list || "tasks",
       dueDate,
-      starred: !!data.starred,
-      stakeAmount: data.stakeAmount,
-      stakeCurrency: data.stakeCurrency,
+      starred: !!data?.starred,
+      stakeAmount: data?.stakeAmount ?? undefined,
+      stakeCurrency: data?.stakeCurrency ?? undefined,
+      memo: data?.memo ?? undefined,
+      proverInstructions: data?.proverInstructions ?? undefined,
+      todayAddedOn: data?.todayAddedOn ?? undefined,
     };
   }, []);
 
@@ -312,7 +325,7 @@ export function useTodoOperations() {
         }
         await FirebaseFirestore.updateDocument({
           reference: `${userTodosCol.path}/${id}`,
-          data: toUpdateWeb,
+          data: toUpdateNative,
         });
       } else {
         await updateDoc(doc(userTodosCol, id), toUpdateWeb);
