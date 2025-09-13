@@ -7,11 +7,18 @@ export function useUIState(activeList?: string) {
   const [sidebarWidth, setSidebarWidth] = useState(260)
   const [isResizing, setIsResizing] = useState(false)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleResize = () => {
       const isLargeScreen = window.innerWidth >= 1200
+      const nowMobile = window.innerWidth < 768
+      setIsMobile(nowMobile)
+      // When transitioning to mobile, ensure sidebar is closed so it doesn't get stuck open
+      if (nowMobile) {
+        setSidebarOpen(false)
+      }
       if (isLargeScreen && activeList !== "reliability") {
         setRightPanelOpen(true)
       } else {
@@ -54,6 +61,7 @@ export function useUIState(activeList?: string) {
     sidebarWidth,
     isResizing,
     rightPanelOpen,
+    isMobile,
     sidebarRef,
     // Actions
     setSidebarOpen,

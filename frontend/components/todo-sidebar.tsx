@@ -122,7 +122,7 @@ export function TodoSidebar({
 
           <Button
             variant={activeList === "reliability" ? "secondary" : "ghost"}
-            className="w-full justify-start gap-2 h-8 text-sm hover:bg-muted/30"
+            className="w-full justify-start gap-2 h-8 text-sm hover:bg-muted/30 hidden"
             onClick={() => setActiveList("reliability")}
           >
             <TrendingUp className="h-4 w-4" />

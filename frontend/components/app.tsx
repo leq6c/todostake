@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useRef, useState } from "react"
 import { TodoSidebar } from "@/components/todo-sidebar"
 import { TodoDetailPanel } from "@/components/todo-detail-panel"
 import { RoutineDetailPanel } from "@/components/routine-detail-panel"
@@ -25,7 +25,11 @@ import { CombinedMain } from "@/components/combined-main"
 import { HomeDex } from "@/components/home-dex"
 import { useProfile } from "@/hooks/use-profile"
 
-export default function TodoAppMain() {
+export interface TodoAppMainProps {
+  floatingMode?: boolean
+}
+
+export default function TodoAppMain(props?: TodoAppMainProps) {
   const { user, loading, signInWithGoogle, signInGuest, signUpWithEmail, signInWithEmail, resetPassword } = useAuth()
   const appState = useAppState()
   const uiState = useUIState(appState.activeList)
@@ -35,6 +39,12 @@ export default function TodoAppMain() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
+  // Mobile sidebar drag state
+  const [isDraggingSidebar, setIsDraggingSidebar] = useState(false)
+  const [dragX, setDragX] = useState(0)
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
+  const draggingRef = useRef(false)
 
   const selectionState = useSelectionState({
     selectedTodo: appState.selectedTodo,
@@ -48,7 +58,7 @@ export default function TodoAppMain() {
   const todoCounts = getTodoCounts(todoOps.todos, routineOps.routines)
   const { profile } = useProfile()
 
-  const floatingMode = profile?.floatingWindowMode ?? true
+  const floatingMode = props?.floatingMode ?? profile?.floatingWindowMode ?? true
 
   const handleMouseDown = (e: React.MouseEvent) => {
     uiState.setIsResizing(true)
@@ -57,6 +67,53 @@ export default function TodoAppMain() {
 
   const handleMenuClick = () => {
     uiState.setSidebarOpen(!uiState.sidebarOpen)
+  }
+
+  // Edge-swipe to open sidebar on mobile
+  const onTouchStartEdge: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (uiState.sidebarOpen) return
+    const touch = e.touches[0]
+    // Only start if within 24px from left edge
+    if (touch.clientX > 24) return
+    touchStartXRef.current = touch.clientX
+    touchStartYRef.current = touch.clientY
+    draggingRef.current = false
+  }
+
+  const onTouchMoveEdge: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (uiState.sidebarOpen) return
+    const touch = e.touches[0]
+    const startX = touchStartXRef.current
+    const startY = touchStartYRef.current
+    if (startX == null || startY == null) return
+    const dx = touch.clientX - startX
+    const dy = Math.abs(touch.clientY - startY)
+    if (!draggingRef.current) {
+      // Start dragging when horizontal movement dominates and is significant
+      if (dx > 10 && dx > dy) {
+        draggingRef.current = true
+        setIsDraggingSidebar(true)
+      } else {
+        return
+      }
+    }
+    const clamped = Math.max(0, Math.min(dx, uiState.sidebarWidth))
+    setDragX(clamped)
+  }
+
+  const endDrag = (commitOpen: boolean) => {
+    setIsDraggingSidebar(false)
+    setDragX(0)
+    draggingRef.current = false
+    touchStartXRef.current = null
+    touchStartYRef.current = null
+    if (commitOpen) uiState.setSidebarOpen(true)
+  }
+
+  const onTouchEndEdge: React.TouchEventHandler<HTMLDivElement> = () => {
+    if (!isDraggingSidebar) return
+    const shouldOpen = dragX > uiState.sidebarWidth * 0.3
+    endDrag(shouldOpen)
   }
 
   if (loading) {
@@ -172,18 +229,40 @@ export default function TodoAppMain() {
               : "relative w-full h-screen md:h-screen bg-background overflow-hidden"
           }
         >
-        {uiState.sidebarOpen && (
-          <div className="md:hidden absolute inset-0 bg-black/50 z-40 backdrop-animate" onClick={() => uiState.setSidebarOpen(false)} />
-        )}
+        {(() => {
+          const openProgress = uiState.isMobile
+            ? uiState.sidebarOpen
+              ? 1
+              : isDraggingSidebar
+                ? Math.max(0, Math.min(1, dragX / uiState.sidebarWidth))
+                : 0
+            : 0
+          if (openProgress <= 0) return null
+          return (
+            <div
+              className="md:hidden absolute inset-0 bg-black z-40"
+              style={{
+                opacity: 0.5 * openProgress,
+                transition: isDraggingSidebar ? "none" : "opacity 300ms ease-in-out",
+                pointerEvents: uiState.sidebarOpen ? "auto" : "none",
+              }}
+              onClick={() => uiState.sidebarOpen && uiState.setSidebarOpen(false)}
+            />
+          )
+        })()}
 
         <div
           ref={uiState.sidebarRef}
           className={`
-          absolute md:relative inset-y-0 left-0 z-50 md:z-1 h-full
-          transform ${uiState.sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-          md:translate-x-0 transition-transform duration-300 ease-in-out
+          absolute md:relative inset-y-0 left-0 z-50 md:z-1 h-full transform md:translate-x-0
         `}
-          style={{ width: `${uiState.sidebarWidth}px` }}
+          style={{
+            width: `${uiState.sidebarWidth}px`,
+            transform: uiState.isMobile
+              ? `translateX(${uiState.sidebarOpen ? 0 : isDraggingSidebar ? -uiState.sidebarWidth + dragX : -uiState.sidebarWidth}px)`
+              : undefined,
+            transition: isDraggingSidebar ? "none" : "transform 300ms ease-in-out",
+          }}
         >
           <TodoSidebar
             activeList={appState.activeList}
@@ -300,6 +379,16 @@ export default function TodoAppMain() {
         )}
         </div>
         </div>
+
+        {/* Mobile edge swipe area to open sidebar */}
+        <div
+          className="md:hidden fixed inset-y-0 left-0 z-30"
+          style={{ width: 24, touchAction: "none" }}
+          onTouchStart={onTouchStartEdge}
+          onTouchMove={onTouchMoveEdge}
+          onTouchEnd={onTouchEndEdge}
+          onTouchCancel={onTouchEndEdge}
+        />
       </div>
     </ThemeProvider>
   )

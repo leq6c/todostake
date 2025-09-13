@@ -15,7 +15,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, subtitle, icon, className = "", onMenuClick }: PageHeaderProps) {
   return (
     <div className={`${className}`}>
-      <div className="md:hidden absolute top-4 left-4 z-50">
+      <div className={"md:hidden absolute left-4 " + (title === "Home" ? "top-10" : "top-4")}>
         <Button
           variant="ghost"
           size="lg"
