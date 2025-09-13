@@ -342,6 +342,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           appState.activeList !== "home" &&
           (appState.selectedTodo || appState.selectedRoutineId) && (
           <div className="absolute right-0 top-0 bottom-0 z-30">
+            <div className="fixed top-0 left-0 w-full h-full bg-black/50 z-[-1] backdrop-animate" onClick={selectionState.closeRightPanel}></div>
             {appState.selectedTodo ? (
               <TodoDetailPanel
                 todo={todoOps.todos.find((t) => t.id === appState.selectedTodo?.id) || appState.selectedTodo}

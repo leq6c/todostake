@@ -47,7 +47,7 @@ export function AccountModal() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 mb-safe">
       {/* Profile Section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">

@@ -19,8 +19,6 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 
-console.log("LOADING FIREBASE");
-
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -98,5 +96,3 @@ if (typeof window !== "undefined") {
 const googleProvider = new GoogleAuthProvider();
 
 export { app, db, auth, googleProvider };
-
-console.log("FIREBASE LOADED");

@@ -41,8 +41,6 @@ export function useAuth() {
     } catch {}
 
     FirebaseAuthentication.addListener("authStateChange", (state) => {
-      console.log("====nativeeee");
-      console.log("authStateChange", state);
       setUser(state.user as unknown as User);
       setLoading(false);
 
@@ -63,8 +61,6 @@ export function useAuth() {
     });
 
     const unsub = auth.onAuthStateChanged((u) => {
-      console.log("====");
-      console.log("onAuthStateChanged", u);
       setUser(u);
       setLoading(false);
       try {

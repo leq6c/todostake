@@ -54,7 +54,7 @@ export function TodoSidebar({
   return (
     <div className="w-full bg-sidebar border-r border-sidebar-border/70 flex flex-col h-full">
       {/* User Profile */}
-      <div className="p-4 border-b border-sidebar-border/70">
+      <div className="p-4 border-b border-sidebar-border/70 mt-safe">
         <div
           className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
           onClick={handleAccountClick}

@@ -181,3 +181,31 @@
   }
 }
 
+.right-to-left-animate {
+  animation: right-to-left-animate 0.3s ease-in-out;
+}
+
+@keyframes right-to-left-animate {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.pb-safe {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.mt-safe {
+  margin-top: var(--safe-area-inset-top);
+}
+
+.pt-safe {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.mb-safe {
+  margin-bottom: var(--safe-area-inset-bottom);
+}

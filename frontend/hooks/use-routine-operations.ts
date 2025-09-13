@@ -9,6 +9,8 @@ import { routineConverter } from "@/lib/converters"
 import { collection, doc, onSnapshot, query, setDoc, updateDoc, deleteDoc } from "firebase/firestore"
 import { useAuth } from "@/hooks/use-auth"
 import { toast } from "@/hooks/use-toast"
+import { Capacitor } from "@capacitor/core"
+import { FirebaseFirestore } from "@capacitor-firebase/firestore"
 
 export function useRoutineOperations() {
   const { user } = useAuth()
@@ -40,6 +42,46 @@ export function useRoutineOperations() {
         }
       }
     } catch {}
+
+    if (Capacitor.isNativePlatform()) {
+      let listenerId: string | null = null
+      void FirebaseFirestore.addCollectionSnapshotListener(
+        { reference: routinesCol.path },
+        (event) => {
+          const next: Routine[] = []
+          for (const s of event?.snapshots ?? []) {
+            const d = s.data as any
+            next.push({
+              id: s.id,
+              name: d.name,
+              type: d.type,
+              createdAt: d.createdAt ?? new Date(),
+              description: d.description ?? undefined,
+              memo: d.memo ?? undefined,
+              streak: d.streak ?? 0,
+              maxStreak: d.maxStreak ?? 0,
+              completedDates: Array.isArray(d.completedDates) ? d.completedDates : [],
+              stakeAmount: d.stakeAmount ?? undefined,
+              stakeCurrency: d.stakeCurrency ?? undefined,
+              maxAbsence: d.maxAbsence ?? undefined,
+              endDate: d.endDate ?? undefined,
+              stopped: !!d.stopped,
+              paused: !!d.paused,
+              proverInstructions: d.proverInstructions ?? undefined,
+              starred: !!d.starred,
+            })
+          }
+          setRoutines(next)
+          setLoading(false)
+          try {
+            if (cacheRoutinesKey) localStorage.setItem(cacheRoutinesKey, JSON.stringify(next))
+          } catch {}
+        },
+      ).then((id) => (listenerId = id))
+      return () => {
+        if (listenerId) void FirebaseFirestore.removeSnapshotListener({ id: listenerId })
+      }
+    }
 
     const unsub = onSnapshot(query(routinesCol), (snap) => {
       const next: Routine[] = []
@@ -80,7 +122,11 @@ export function useRoutineOperations() {
         endDate: endDate ?? undefined,
         starred: false,
       }
-      await setDoc(doc(routinesCol, id), payload)
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.setDocument({ reference: `${routinesCol.path}/${id}`, data: payload as any })
+      } else {
+        await setDoc(doc(routinesCol, id), payload)
+      }
     },
     [user, routinesCol],
   )
@@ -91,7 +137,11 @@ export function useRoutineOperations() {
       const toUpdate: Record<string, any> = { ...updates }
       // filter out id field
       delete toUpdate.id
-      await updateDoc(doc(routinesCol, id), toUpdate)
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.updateDocument({ reference: `${routinesCol.path}/${id}`, data: toUpdate })
+      } else {
+        await updateDoc(doc(routinesCol, id), toUpdate)
+      }
     },
     [user, routinesCol],
   )
@@ -99,7 +149,11 @@ export function useRoutineOperations() {
   const deleteRoutine = useCallback(
     async (id: string) => {
       if (!user || !routinesCol) return
-      await deleteDoc(doc(routinesCol, id))
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.deleteDocument({ reference: `${routinesCol.path}/${id}` })
+      } else {
+        await deleteDoc(doc(routinesCol, id))
+      }
     },
     [user, routinesCol],
   )
@@ -119,21 +173,39 @@ export function useRoutineOperations() {
         updateReliabilityScore(action, reason, context)
 
         const newDates = current.completedDates.filter((d) => d !== today)
-        await updateDoc(doc(routinesCol, id), {
-          completedDates: newDates,
-          streak: Math.max(0, current.streak - 1),
-        })
+        if (Capacitor.isNativePlatform()) {
+          await FirebaseFirestore.updateDocument({
+            reference: `${routinesCol.path}/${id}`,
+            data: { completedDates: newDates, streak: Math.max(0, current.streak - 1) },
+          })
+        } else {
+          await updateDoc(doc(routinesCol, id), {
+            completedDates: newDates,
+            streak: Math.max(0, current.streak - 1),
+          })
+        }
       } else {
         const action = "complete_routine"
         const reason = generateReliabilityReason(action, current.name, context)
         updateReliabilityScore(action, reason, context)
 
         const newStreak = current.streak + 1
-        await updateDoc(doc(routinesCol, id), {
-          completedDates: [...current.completedDates, today],
-          streak: newStreak,
-          maxStreak: Math.max(current.maxStreak, newStreak),
-        })
+        if (Capacitor.isNativePlatform()) {
+          await FirebaseFirestore.updateDocument({
+            reference: `${routinesCol.path}/${id}`,
+            data: {
+              completedDates: [...current.completedDates, today],
+              streak: newStreak,
+              maxStreak: Math.max(current.maxStreak, newStreak),
+            },
+          })
+        } else {
+          await updateDoc(doc(routinesCol, id), {
+            completedDates: [...current.completedDates, today],
+            streak: newStreak,
+            maxStreak: Math.max(current.maxStreak, newStreak),
+          })
+        }
       }
     },
     [user, routinesCol, routines, updateReliabilityScore],
@@ -148,7 +220,11 @@ export function useRoutineOperations() {
         const reason = generateReliabilityReason("break_streak", current.name, context)
         updateReliabilityScore("break_streak", reason, context)
       }
-      await updateDoc(doc(routinesCol, id), { stopped: true })
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.updateDocument({ reference: `${routinesCol.path}/${id}`, data: { stopped: true } })
+      } else {
+        await updateDoc(doc(routinesCol, id), { stopped: true })
+      }
       toast({ title: "Routine stopped" })
     },
     [user, routinesCol, routines, updateReliabilityScore],
@@ -157,7 +233,11 @@ export function useRoutineOperations() {
   const pauseRoutine = useCallback(
     async (id: string) => {
       if (!user || !routinesCol) return
-      await updateDoc(doc(routinesCol, id), { paused: true })
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.updateDocument({ reference: `${routinesCol.path}/${id}`, data: { paused: true } })
+      } else {
+        await updateDoc(doc(routinesCol, id), { paused: true })
+      }
       toast({ title: "Routine paused" })
     },
     [user, routinesCol],
@@ -168,7 +248,11 @@ export function useRoutineOperations() {
       if (!user || !routinesCol) return
       const current = routines.find((r) => r.id === id)
       if (!current) return
-      await updateDoc(doc(routinesCol, id), { starred: !current.starred })
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.updateDocument({ reference: `${routinesCol.path}/${id}`, data: { starred: !current.starred } })
+      } else {
+        await updateDoc(doc(routinesCol, id), { starred: !current.starred })
+      }
     },
     [user, routinesCol, routines],
   )

@@ -19,6 +19,8 @@ import {
   limit,
   writeBatch,
 } from "firebase/firestore"
+import { Capacitor } from "@capacitor/core"
+import { FirebaseFirestore } from "@capacitor-firebase/firestore"
 
 export function useReliabilityScore() {
   const { user } = useAuth()
@@ -38,6 +40,53 @@ export function useReliabilityScore() {
       return
     }
 
+    if (Capacitor.isNativePlatform()) {
+      // Ensure current doc exists
+      void FirebaseFirestore.getDocument({ reference: currentRef.path }).then(async (res) => {
+        if (!res.snapshot.data) {
+          await FirebaseFirestore.setDocument({
+            reference: currentRef.path,
+            data: { score: 87, updatedAt: new Date() },
+          })
+        }
+      })
+
+      let currentListenerId: string | null = null
+      let historyListenerId: string | null = null
+
+      void FirebaseFirestore.addDocumentSnapshotListener(
+        { reference: currentRef.path },
+        (event) => {
+          const score = (event?.snapshot?.data as any)?.score
+          if (typeof score === "number") setCurrentScore(score)
+        },
+      ).then((id) => (currentListenerId = id))
+
+      void FirebaseFirestore.addCollectionSnapshotListener(
+        {
+          reference: historyCol.path,
+          queryConstraints: [
+            { type: "orderBy", fieldPath: "createdAt", directionStr: "desc" },
+            { type: "limit", limit: 180 },
+          ] as any,
+        },
+        (event) => {
+          const list: ReliabilityEntry[] = []
+          for (const s of event?.snapshots ?? []) {
+            const data = (s.data ?? {}) as any
+            list.push({ date: data.date, score: data.score, change: data.change, reason: data.reason })
+          }
+          setReliabilityHistory(list)
+        },
+      ).then((id) => (historyListenerId = id))
+
+      return () => {
+        if (currentListenerId) void FirebaseFirestore.removeSnapshotListener({ id: currentListenerId })
+        if (historyListenerId) void FirebaseFirestore.removeSnapshotListener({ id: historyListenerId })
+      }
+    }
+
+    // Web fallback
     // Ensure current doc exists
     getDoc(currentRef).then(async (snap) => {
       if (!snap.exists()) {
@@ -109,6 +158,36 @@ export function useReliabilityScore() {
       const change = calculateScoreChange(action, context)
       const dateStr = new Date().toISOString().split("T")[0]
 
+      if (Capacitor.isNativePlatform()) {
+        // Emulate transaction with get + batch
+        const current = await FirebaseFirestore.getDocument({ reference: currentRef.path })
+        const prevScore = ((current.snapshot.data as any)?.score ?? 87) as number
+        const newScore = Math.max(0, Math.min(100, prevScore + change))
+        const historyId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+        await FirebaseFirestore.writeBatch({
+          operations: [
+            {
+              type: "set",
+              reference: currentRef.path,
+              data: { score: newScore, updatedAt: new Date() },
+              options: { merge: true } as any,
+            },
+            {
+              type: "set",
+              reference: `${historyCol.path}/${historyId}`,
+              data: {
+                date: dateStr,
+                score: newScore,
+                change,
+                reason,
+                createdAt: new Date(),
+              },
+            },
+          ],
+        })
+        return
+      }
+
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(currentRef)
         const prevScore = (snap.exists() ? (snap.data() as any).score : 87) as number
@@ -129,6 +208,16 @@ export function useReliabilityScore() {
 
   const resetMetrics = useCallback(async () => {
     if (!user || !currentRef || !historyCol) return
+    if (Capacitor.isNativePlatform()) {
+      const col = await FirebaseFirestore.getCollection({ reference: historyCol.path })
+      const operations: any[] = []
+      for (const s of col.snapshots ?? []) {
+        operations.push({ type: "delete", reference: s.path })
+      }
+      operations.push({ type: "set", reference: currentRef.path, data: { score: 87, updatedAt: new Date() }, options: { merge: true } as any })
+      if (operations.length) await FirebaseFirestore.writeBatch({ operations })
+      return
+    }
     const snap = await getDocs(historyCol)
     const batch = writeBatch(db)
     snap.forEach((d) => batch.delete(d.ref))

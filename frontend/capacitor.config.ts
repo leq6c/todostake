@@ -1,10 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
+import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
 
 const config: CapacitorConfig = {
   appId: "com.cinnon.todohabit",
   appName: "todohabit",
   webDir: "out",
   plugins: {
+    Keyboard: {
+      resize: KeyboardResize.None,
+    },
     GoogleAuth: {
       scopes: ["profile", "email"],
       // Optional: supply client IDs via env if you have them handy

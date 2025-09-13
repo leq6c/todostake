@@ -153,7 +153,7 @@ export function CombinedMain({
       >
         <div className="flex items-center justify-between relative py-2">
           <div className="flex items-center gap-2">
-            <div className="webkit-fill-available mt-[1px]">
+            <div className="mt-[1px] h-10">
               <CircularCheckbox
                 checked={isCompletedToday}
                 onClick={(e) => {
@@ -208,7 +208,7 @@ export function CombinedMain({
       onClick={() => onSelectTodo(todo)}
     >
       <div className="flex items-center gap-2 py-2 relative">
-        <div className="webkit-fill-available mt-[1px]">
+        <div className="mt-[1px] h-9.5">
           <CircularCheckbox
             checked={todo.completed}
             onClick={(e) => {
@@ -260,11 +260,11 @@ export function CombinedMain({
   return (
     <div className="flex-1 flex flex-col min-h-0 relative h-full" onClick={handleBackgroundClick}>
       <div
-        className="flex-1 overflow-y-auto space-y-6 flex justify-center"
+        className="flex-1 overflow-y-auto space-y-6 flex justify-center isolate"
         onClick={handleBackgroundClick}
       >
         <div className="w-full space-y-2 flex flex-col">
-          <div className="sticky top-0 z-1 mt-6 supports-[backdrop-filter]:backdrop-blur p-3 md:p-4">
+          <div className="sticky top-0 z-1 mt-6 supports-[backdrop-filter]:backdrop-blur p-3 md:p-4 pt-safe">
             {(() => {
               const openCount = incompleteTodos.length + openRoutines.length
               const completedCount = completedTodos.length + completedRoutinesToday.length
@@ -312,7 +312,7 @@ export function CombinedMain({
           <div className="flex-1"></div>
 
           {/* Bottom-fixed input area within layout (non-scrolling) */}
-          <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur sticky bottom-0" onClick={(e) => e.stopPropagation()}>
+          <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur sticky bottom-0 pb-safe" onClick={(e) => e.stopPropagation()}>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 {(["task", "daily", "weekly", "monthly"] as const).map((t) => (

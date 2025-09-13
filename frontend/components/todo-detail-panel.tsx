@@ -114,7 +114,6 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
     onUpdate(todo.id, { dueDate: date })
     setSelectedDueDate(date)
     setShowDatePicker(false)
-    toast({ title: "Due date set", description: date.toLocaleDateString() })
   }
 
   const handleRemoveDueDate = () => {
@@ -246,7 +245,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
     <DetailPanelLayout
       onClose={onClose}
       onDelete={() => handleDeleteClick()}
-      footerContent={`Created ${todo.createdAt.toLocaleDateString()}`}
+      footerContent={`Created ${todo.createdAt?.toLocaleDateString ? todo.createdAt.toLocaleDateString() : "unknown"}`}
     >
       <div className="flex items-center gap-3">
         <CircularCheckbox checked={todo.completed} onClick={() => onToggle(todo.id)} />

@@ -26,6 +26,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { FirebaseFirestore } from "@capacitor-firebase/firestore";
+import { Capacitor } from "@capacitor/core";
 
 export function useTodoOperations() {
   const { user } = useAuth();
@@ -96,6 +97,67 @@ export function useTodoOperations() {
       }
     } catch {}
 
+    if (Capacitor.isNativePlatform()) {
+      let todosListenerId: string | null = null;
+      let listsListenerId: string | null = null;
+
+      // Native listeners
+      void FirebaseFirestore.addCollectionSnapshotListener(
+        { reference: userTodosCol.path },
+        (event) => {
+          try {
+            const next: Todo[] = [];
+            const snaps = event?.snapshots ?? [];
+            for (const s of snaps) {
+              const data = s.data ?? {};
+              next.push(fromFirestoreTodo(s.id, data));
+            }
+            setTodos(next);
+            try {
+              if (cacheTodosKey)
+                localStorage.setItem(cacheTodosKey, JSON.stringify(next));
+            } catch {}
+          } catch {}
+        }
+      ).then((id) => (todosListenerId = id));
+
+      void FirebaseFirestore.addCollectionSnapshotListener(
+        { reference: userListsCol.path },
+        (event) => {
+          try {
+            const next: TodoList[] = [];
+            const snaps = event?.snapshots ?? [];
+            for (const s of snaps) {
+              if (s.id === "__seeded") continue;
+              const data = (s.data ?? {}) as any;
+              next.push({
+                id: data.id ?? s.id,
+                name: data.name,
+                color: data.color,
+              });
+            }
+            setCustomLists(next);
+            try {
+              if (cacheListsKey)
+                localStorage.setItem(cacheListsKey, JSON.stringify(next));
+            } catch {}
+          } catch {}
+        }
+      ).then((id) => (listsListenerId = id));
+
+      return () => {
+        if (todosListenerId)
+          void FirebaseFirestore.removeSnapshotListener({
+            id: todosListenerId,
+          }).catch(() => {});
+        if (listsListenerId)
+          void FirebaseFirestore.removeSnapshotListener({
+            id: listsListenerId,
+          }).catch(() => {});
+      };
+    }
+
+    // Web listeners
     const unsubTodos = onSnapshot(query(userTodosCol), (snap) => {
       const next: Todo[] = [];
       snap.forEach((d) => next.push(d.data()));
@@ -134,15 +196,6 @@ export function useTodoOperations() {
       proverInstructions?: string,
       dueDate?: Date
     ) => {
-      console.log(
-        "addTodo",
-        text,
-        activeList,
-        stakeAmount,
-        stakeCurrency,
-        proverInstructions,
-        dueDate
-      );
       if (!user || !userTodosCol) {
         console.log("addTodo: no user or userTodosCol");
         return;
@@ -178,21 +231,15 @@ export function useTodoOperations() {
       } else if (activeList === "planned") {
         payload.dueDate = todayOnly;
       }
-      console.log("addTodo: adding to firestore");
-      console.log("addTodo: userTodosCol", userTodosCol);
-      console.log("addTodo: payload", payload);
-      try {
-        //await addDoc(userTodosCol, payload as any);
+      if (Capacitor.isNativePlatform()) {
         await FirebaseFirestore.addDocument({
           reference: userTodosCol.path,
           data: payload,
         });
-      } catch (e) {
-        console.log("addTodo: error adding to firestore", e);
+      } else {
+        await addDoc(userTodosCol, payload as any);
       }
-      console.log("addTodo: added to firestore");
       toast({ title: "Task added" });
-      console.log("addTodo: done");
     },
     [user, userTodosCol]
   );
@@ -203,7 +250,14 @@ export function useTodoOperations() {
       const current = todos.find((t) => t.id === id);
       if (!current) return;
       const newCompleted = !current.completed;
-      await updateDoc(doc(userTodosCol, id), { completed: newCompleted });
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.updateDocument({
+          reference: `${userTodosCol.path}/${id}`,
+          data: { completed: newCompleted },
+        });
+      } else {
+        await updateDoc(doc(userTodosCol, id), { completed: newCompleted });
+      }
 
       // Update reliability score (frontend only)
       const updatedTemp = { ...current, completed: newCompleted };
@@ -222,7 +276,13 @@ export function useTodoOperations() {
   const deleteTodo = useCallback(
     async (id: string) => {
       if (!user || !userTodosCol) return;
-      await deleteDoc(doc(userTodosCol, id));
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.deleteDocument({
+          reference: `${userTodosCol.path}/${id}`,
+        });
+      } else {
+        await deleteDoc(doc(userTodosCol, id));
+      }
       //toast({ title: "Task deleted" })
     },
     [user, userTodosCol]
@@ -231,16 +291,32 @@ export function useTodoOperations() {
   const updateTodo = useCallback(
     async (id: string, updates: Partial<Todo>) => {
       if (!user || !userTodosCol) return;
-      const toUpdate: Record<string, any> = { ...updates };
+      const toUpdateWeb: Record<string, any> = { ...updates };
       if (updates.dueDate instanceof Date || updates.dueDate === null) {
-        toUpdate.dueDate = updates.dueDate
+        toUpdateWeb.dueDate = updates.dueDate
           ? Timestamp.fromDate(updates.dueDate)
           : null;
       }
       if (updates.createdAt instanceof Date) {
-        toUpdate.createdAt = Timestamp.fromDate(updates.createdAt);
+        toUpdateWeb.createdAt = Timestamp.fromDate(updates.createdAt);
       }
-      await updateDoc(doc(userTodosCol, id), toUpdate);
+
+      if (Capacitor.isNativePlatform()) {
+        // For native plugin, prefer plain values
+        const toUpdateNative: Record<string, any> = { ...updates };
+        if (updates.dueDate instanceof Date || updates.dueDate === null) {
+          toUpdateNative.dueDate = updates.dueDate ?? null;
+        }
+        if (updates.createdAt instanceof Date) {
+          toUpdateNative.createdAt = updates.createdAt;
+        }
+        await FirebaseFirestore.updateDocument({
+          reference: `${userTodosCol.path}/${id}`,
+          data: toUpdateWeb,
+        });
+      } else {
+        await updateDoc(doc(userTodosCol, id), toUpdateWeb);
+      }
     },
     [user, userTodosCol]
   );
@@ -250,7 +326,14 @@ export function useTodoOperations() {
       if (!user || !userTodosCol) return;
       const current = todos.find((t) => t.id === id);
       if (!current) return;
-      await updateDoc(doc(userTodosCol, id), { starred: !current.starred });
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.updateDocument({
+          reference: `${userTodosCol.path}/${id}`,
+          data: { starred: !current.starred },
+        });
+      } else {
+        await updateDoc(doc(userTodosCol, id), { starred: !current.starred });
+      }
     },
     [user, userTodosCol, todos]
   );
@@ -259,7 +342,14 @@ export function useTodoOperations() {
     async (name: string, color: string) => {
       if (!user || !userListsCol) return;
       const id = name.toLowerCase().replace(/\s+/g, "-");
-      await setDoc(doc(userListsCol, id), { id, name, color });
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseFirestore.setDocument({
+          reference: `${userListsCol.path}/${id}`,
+          data: { id, name, color },
+        });
+      } else {
+        await setDoc(doc(userListsCol, id), { id, name, color });
+      }
       toast({ title: "List created", description: name });
     },
     [user, userListsCol]
@@ -269,13 +359,37 @@ export function useTodoOperations() {
     async (id: string) => {
       if (!user || !userListsCol || !userTodosCol) return;
       // Delete todos that belong to this list then the list doc
-      const qy = query(userTodosCol, where("list", "==", id));
-      const batch = writeBatch(db);
-      const { getDocs } = await import("firebase/firestore");
-      const snap = await getDocs(qy);
-      snap.forEach((d) => batch.delete(d.ref));
-      batch.delete(doc(userListsCol, id));
-      await batch.commit();
+      if (Capacitor.isNativePlatform()) {
+        const qy = {
+          type: "where" as const,
+          fieldPath: "list",
+          opStr: "==" as const,
+          value: id,
+        };
+        const result = await FirebaseFirestore.getCollection({
+          reference: userTodosCol.path,
+          compositeFilter: { type: "and", queries: [qy] },
+        } as any);
+        const operations: any[] = [];
+        for (const s of result.snapshots ?? []) {
+          operations.push({ type: "delete", reference: s.path });
+        }
+        operations.push({
+          type: "delete",
+          reference: `${userListsCol.path}/${id}`,
+        });
+        if (operations.length > 0) {
+          await FirebaseFirestore.writeBatch({ operations });
+        }
+      } else {
+        const qy = query(userTodosCol, where("list", "==", id));
+        const batch = writeBatch(db);
+        const { getDocs } = await import("firebase/firestore");
+        const snap = await getDocs(qy);
+        snap.forEach((d) => batch.delete(d.ref));
+        batch.delete(doc(userListsCol, id));
+        await batch.commit();
+      }
       toast({ title: "List deleted" });
     },
     [user, userListsCol, userTodosCol]
@@ -287,26 +401,52 @@ export function useTodoOperations() {
     let done = false;
     const seed = async () => {
       try {
-        const seededRef = doc(
-          collection(db, "users", user.uid, "lists"),
-          "__seeded"
-        );
-        const { getDoc, getDocs } = await import("firebase/firestore");
-        const seededSnap = await getDoc(seededRef);
-        if (seededSnap.exists()) return;
-        const listsSnap = await getDocs(query(userListsCol));
-        if (listsSnap.empty) {
-          await setDoc(doc(userListsCol, "work"), {
-            id: "work",
-            name: "Work",
-            color: "bg-blue-500",
+        if (Capacitor.isNativePlatform()) {
+          const basePath = `users/${user.uid}/lists`;
+          const seededPath = `${basePath}/__seeded`;
+          const seeded = await FirebaseFirestore.getDocument({
+            reference: seededPath,
           });
-          await setDoc(doc(userListsCol, "personal"), {
-            id: "personal",
-            name: "Personal",
-            color: "bg-green-500",
+          if (seeded.snapshot.data) return;
+          const lists = await FirebaseFirestore.getCollection({
+            reference: basePath,
           });
-          await setDoc(seededRef, { at: serverTimestamp() });
+          if (!lists.snapshots || lists.snapshots.length === 0) {
+            await FirebaseFirestore.setDocument({
+              reference: `${basePath}/work`,
+              data: { id: "work", name: "Work", color: "bg-blue-500" },
+            });
+            await FirebaseFirestore.setDocument({
+              reference: `${basePath}/personal`,
+              data: { id: "personal", name: "Personal", color: "bg-green-500" },
+            });
+            await FirebaseFirestore.setDocument({
+              reference: seededPath,
+              data: { at: new Date() },
+            });
+          }
+        } else {
+          const seededRef = doc(
+            collection(db, "users", user.uid, "lists"),
+            "__seeded"
+          );
+          const { getDoc, getDocs } = await import("firebase/firestore");
+          const seededSnap = await getDoc(seededRef);
+          if (seededSnap.exists()) return;
+          const listsSnap = await getDocs(query(userListsCol));
+          if (listsSnap.empty) {
+            await setDoc(doc(userListsCol, "work"), {
+              id: "work",
+              name: "Work",
+              color: "bg-blue-500",
+            });
+            await setDoc(doc(userListsCol, "personal"), {
+              id: "personal",
+              name: "Personal",
+              color: "bg-green-500",
+            });
+            await setDoc(seededRef, { at: serverTimestamp() });
+          }
         }
       } catch {
         // ignore seeding errors
