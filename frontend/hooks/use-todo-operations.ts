@@ -170,7 +170,7 @@ export function useTodoOperations() {
     async (id: string) => {
       if (!user || !userTodosCol) return
       await deleteDoc(doc(userTodosCol, id))
-      toast({ title: "Task deleted" })
+      //toast({ title: "Task deleted" })
     },
     [user, userTodosCol],
   )

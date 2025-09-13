@@ -14,7 +14,7 @@ import { StakeBadge } from "@/components/ui/stake-badge"
 import { StreakVisualization } from "@/components/ui/streak-visualization"
 import { MobileHeader } from "@/components/ui/mobile-header"
 import type { Routine, Todo, StreakData } from "@/types"
-
+import { useProfile } from "@/hooks/use-profile"
 interface CombinedMainProps {
   // Active context
   activeList: string

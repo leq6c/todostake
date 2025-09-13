@@ -23,6 +23,7 @@ import { CircularCheckbox } from "@/components/ui/circular-checkbox"
 import { StakeSection } from "@/components/ui/stake-section"
 import type { Todo } from "@/types"
 import { toast } from "@/hooks/use-toast"
+import { useProfile } from "@/hooks/use-profile"
 
 interface TodoDetailPanelProps {
   todo: Todo | null
@@ -55,6 +56,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
   const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(todo?.dueDate || null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteModalPosition, setDeleteModalPosition] = useState({ x: 0, y: 0 })
+  const {profile} = useProfile()
 
   // Keep local UI state in sync when a new todo is selected or data updates
   React.useEffect(() => {
@@ -392,13 +394,15 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
       </div>
 
       {/* Stake Section */}
-      <StakeSection
-        currentStakeAmount={todo.stakeAmount}
-        currentCurrency={todo.stakeCurrency}
-        onStakeSubmit={handleStakeSubmit}
-        onAddInstructions={handleShowProverModal}
-        proverInstructions={proverInstructions}
-      />
+      {profile?.walletConnected && (
+        <StakeSection
+          currentStakeAmount={todo.stakeAmount}
+          currentCurrency={todo.stakeCurrency}
+          onStakeSubmit={handleStakeSubmit}
+          onAddInstructions={handleShowProverModal}
+          proverInstructions={proverInstructions}
+        />
+      )}
 
       <SpeechBubbleModal
         isOpen={showProverModal}

@@ -9,6 +9,7 @@ import { MobileHeader } from "@/components/ui/mobile-header"
 import { PageHeader } from "@/components/ui/page-header"
 import { ActionButton } from "@/components/ui/action-button"
 import { Clock, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { useProfile } from "@/hooks/use-profile"
 
 interface HomeDexProps {
   onAddTask: (
@@ -43,6 +44,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
   const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(null)
   const [showEndDatePicker, setShowEndDatePicker] = useState(false)
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null)
+  const {profile} = useProfile()
 
   const submit = () => {
     if (!text.trim()) return
@@ -119,7 +121,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
 
             {/* Bottom box */}
             <div className="rounded-xl bg-card/95 backdrop-blur-md p-4 space-y-3 flex flex-col md:flex-row gap-3 pt-0">
-              <div className="w-full md:w-auto">
+              <div className={"w-full md:w-auto" + (profile?.walletConnected ? "" : " hidden")}>
                 <div className="text-xs text-foreground mb-1">Stake</div>
                 <div className="flex flex-row gap-2 items-center">
                   <Input
@@ -142,7 +144,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                 </div>
               </div>
 
-              <div className="gap-2 flex-1">
+              <div className="gap-2">
                 {type === "task" && (
                   <div className="space-y-2 relative">
                     <div className="text-xs text-foreground mb-1">Due date</div>
@@ -160,7 +162,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                         </button>
                       </div>
                     ) : (
-                      <ActionButton icon={<Clock className="h-4 w-4" />} onClick={() => setShowDatePicker(true)}>
+                      <ActionButton className="mb-0" icon={<Clock className="h-4 w-4" />} onClick={() => setShowDatePicker(true)}>
                         Add due date
                       </ActionButton>
                     )}
@@ -260,7 +262,7 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                       </div>
                     </div>
 
-                    <div>
+                    {profile?.walletConnected && <div>
                       <div className="text-xs text-foreground mb-1">Maximum Absence ({unitLabel})</div>
                       <Input
                       placeholder={unitLabel === "days" ? "e.g. 7" : unitLabel === "weeks" ? "e.g. 4" : "e.g. 2"}
@@ -269,20 +271,34 @@ export function HomeDex({ onAddTask, onAddRoutine, onMenuClick }: HomeDexProps) 
                       onChange={(e) => setMaxAbsence(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && submit()}
                       className="h-10 text-sm border-0 focus:ring-0 focus-visible:ring-0 bg-muted/50 text-foreground placeholder:text-muted-foreground"
-                    />
-                    </div>
+                      />
+                    </div>}
                   </div>
                 )}
               </div>
 
+              {!profile?.walletConnected && type !== "task" && (<div>
+                <div className="text-xs text-foreground mb-1">Maximum Absence ({unitLabel})</div>
+                <Input
+                placeholder={unitLabel === "days" ? "e.g. 7" : unitLabel === "weeks" ? "e.g. 4" : "e.g. 2"}
+                type="number"
+                value={maxAbsence}
+                onChange={(e) => setMaxAbsence(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
+                className="h-10 text-sm border-0 focus:ring-0 focus-visible:ring-0 bg-muted/50 text-foreground placeholder:text-muted-foreground"
+                />
+              </div>)}
+
+              <div className="flex-1"></div>
+
               <div className="pt-4">
                 <Button className="w-full h-11 shadow-md" onClick={submit}>
-                  {type === "task" ? "Pledge" : `Pledge`}
+                  {type === "task" ? "Create" : `Create`}
                 </Button>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-8">Keep your word or lose your stake.</p>
+          <p className="text-sm text-muted-foreground mt-8 hidden">Keep your word or lose your stake.</p>
         </div>
       </div>
     </div>

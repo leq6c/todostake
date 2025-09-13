@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import type { Routine, StreakData } from "@/types"
+import { useProfile } from "@/hooks/use-profile"
 
 interface RoutineDetailPanelProps {
   routine: Routine | null
@@ -61,6 +62,7 @@ export function RoutineDetailPanel({
   const [deleteModalPosition, setDeleteModalPosition] = useState({ x: 0, y: 0 })
   const [showEndDatePicker, setShowEndDatePicker] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
+  const {profile} = useProfile()
 
   // Keep description in sync with selected routine; call hook unconditionally
   useEffect(() => {
@@ -471,14 +473,16 @@ export function RoutineDetailPanel({
       </div>
 
       {/* Stake section */}
-      <StakeSection
-        currentStakeAmount={routine.stakeAmount}
-        currentCurrency={routine.stakeCurrency}
-        onStakeSubmit={handleStakeSubmit}
-        onAddInstructions={handleAddProverInstructions}
-        proverInstructions={routine.proverInstructions}
-        description="Put money on the line to stay committed to your routine"
-      />
+      {profile?.walletConnected && (
+        <StakeSection
+          currentStakeAmount={routine.stakeAmount}
+          currentCurrency={routine.stakeCurrency}
+          onStakeSubmit={handleStakeSubmit}
+          onAddInstructions={handleAddProverInstructions}
+          proverInstructions={routine.proverInstructions}
+          description="Put money on the line to stay committed to your routine"
+        />
+      )}
 
       {/* Maximum Absence section */}
       <div className="space-y-3">

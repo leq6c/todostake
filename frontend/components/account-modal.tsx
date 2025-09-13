@@ -19,8 +19,8 @@ export function AccountModal() {
   const email = useMemo(() => profile?.email || user?.email || (user?.isAnonymous ? "Guest" : ""), [profile, user])
   const [encryptionEnabled, setEncryptionEnabled] = useState(true)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
-  const [walletConnected, setWalletConnected] = useState(true)
-  const [walletAddress] = useState("7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
+  const [walletConnected, setWalletConnected] = useState(false)
+  const [walletAddress] = useState("")
   
   // Sync local name with profile
   useEffect(() => {
@@ -101,7 +101,7 @@ export function AccountModal() {
       </div>
 
       {/* Wallet Settings Section */}
-      <div className="space-y-3">
+      <div className={"space-y-3" + (profile?.walletConnected ? "" : " hidden")}>
         <div className="flex items-center gap-2">
           <Wallet className="h-4 w-4 text-muted-foreground" />
           <h4 className="text-sm font-medium">Wallet</h4>
@@ -153,7 +153,7 @@ export function AccountModal() {
         </div>
       </div>
 
-      <Separator />
+      <Separator className={profile?.walletConnected ? "" : " hidden"} />
 
       {/* Security Section */}
       <div className="space-y-3 hidden">
@@ -181,7 +181,7 @@ export function AccountModal() {
         </div>
       </div>
 
-      <Separator />
+      <Separator className="hidden" />
 
       {/* Actions */}
       <div className="space-y-2">
