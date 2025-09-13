@@ -1,4 +1,4 @@
-import type { Todo } from "@/types"
+import type { Todo, Routine } from "@/types"
 
 export function getCurrentView(activeList: string) {
   if (activeList.startsWith("routine-")) {
@@ -27,8 +27,8 @@ export function getFilteredTodos(todos: Todo[], activeList: string): Todo[] {
       return isDueToday || isAddedToday
     }
     if (activeList === "planned") {
-      // Show upcoming or unscheduled and not completed
-      return !todo.completed
+      // Only tasks with an explicit due date and not completed
+      return !!todo.dueDate && !todo.completed
     }
     if (activeList === "tasks") {
       return true
@@ -37,25 +37,27 @@ export function getFilteredTodos(todos: Todo[], activeList: string): Todo[] {
   })
 }
 
-export function getTodoCounts(todos: Todo[]) {
+export function getTodoCounts(todos: Todo[], routines: Routine[]) {
+  const now = new Date()
+  const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayStr = todayOnly.toISOString().split("T")[0]
+
+  const isDueToday = (d?: Date | null) => {
+    if (!d) return false
+    const due = new Date(d)
+    const dueOnly = new Date(due.getFullYear(), due.getMonth(), due.getDate())
+    return dueOnly.getTime() === todayOnly.getTime()
+  }
+
+  const todayTodosOpen = todos.filter((t) => !t.completed && (isDueToday(t.dueDate) || t.todayAddedOn === todayStr)).length
+  const openRoutinesCount = routines.filter((r) => !r.stopped && !r.paused && !r.completedDates.includes(todayStr)).length
+
+  const plannedTodosOpen = todos.filter((t) => !t.completed && !!t.dueDate).length
+  const allOpenTodos = todos.filter((t) => !t.completed).length
+
   return {
-    today: todos.filter((t) => {
-      const now = new Date()
-      const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const isDueToday = (() => {
-        if (!t.dueDate) return false
-        const due = new Date(t.dueDate)
-        const dueOnly = new Date(due.getFullYear(), due.getMonth(), due.getDate())
-        return dueOnly.getTime() === todayOnly.getTime()
-      })()
-      const isAddedToday = (() => {
-        if (!t.todayAddedOn) return false
-        const todayStr = todayOnly.toISOString().split("T")[0]
-        return t.todayAddedOn === todayStr
-      })()
-      return isDueToday || isAddedToday
-    }).length,
-    planned: todos.filter((t) => !t.completed).length,
-    tasks: todos.length,
+    today: todayTodosOpen + openRoutinesCount,
+    planned: plannedTodosOpen + openRoutinesCount,
+    tasks: allOpenTodos + openRoutinesCount,
   }
 }

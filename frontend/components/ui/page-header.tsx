@@ -1,17 +1,30 @@
 "use client"
 
 import type React from "react"
+import { Button } from "./button"
+import { Menu } from "lucide-react"
 
 interface PageHeaderProps {
   title: string
   subtitle?: string
   icon?: React.ReactNode
   className?: string
+  onMenuClick?: () => void
 }
 
-export function PageHeader({ title, subtitle, icon, className = "" }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, icon, className = "", onMenuClick }: PageHeaderProps) {
   return (
     <div className={`${className}`}>
+      <div className="md:hidden absolute top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={onMenuClick}
+          className="backdrop-blur-sm"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+      </div>
       <div className="flex items-center gap-1 justify-center">
         {icon}
         <h1 className="text-xl md:text-2xl text-foreground mb-1 font-medium">{title}</h1>

@@ -167,3 +167,17 @@
 *::-webkit-resizer {
   border: none;
 }
+
+.backdrop-animate {
+  animation: backdrop-animate 0.3s ease-in-out;
+}
+
+@keyframes backdrop-animate {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+

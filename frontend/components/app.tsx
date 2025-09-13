@@ -45,7 +45,7 @@ export default function TodoAppMain() {
   })
 
   const filteredTodos = getFilteredTodos(todoOps.todos, appState.activeList)
-  const todoCounts = getTodoCounts(todoOps.todos)
+  const todoCounts = getTodoCounts(todoOps.todos, routineOps.routines)
   const { profile } = useProfile()
 
   const floatingMode = profile?.floatingWindowMode ?? true
@@ -172,19 +172,8 @@ export default function TodoAppMain() {
               : "relative w-full h-screen md:h-screen bg-background overflow-hidden"
           }
         >
-        <div className="md:hidden absolute top-4 left-4 z-50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => uiState.setSidebarOpen(!uiState.sidebarOpen)}
-            className="bg-background/80 backdrop-blur-sm border"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </div>
-
         {uiState.sidebarOpen && (
-          <div className="md:hidden absolute inset-0 bg-black/50 z-40" onClick={() => uiState.setSidebarOpen(false)} />
+          <div className="md:hidden absolute inset-0 bg-black/50 z-40 backdrop-animate" onClick={() => uiState.setSidebarOpen(false)} />
         )}
 
         <div

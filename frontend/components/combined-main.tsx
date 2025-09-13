@@ -259,8 +259,6 @@ export function CombinedMain({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 relative h-full" onClick={handleBackgroundClick}>
-      <MobileHeader title={getListTitle()} onMenuClick={onMenuClick} />
-
       <div
         className="flex-1 overflow-y-auto space-y-6 flex justify-center"
         onClick={handleBackgroundClick}
@@ -271,7 +269,7 @@ export function CombinedMain({
               const openCount = incompleteTodos.length + openRoutines.length
               const completedCount = completedTodos.length + completedRoutinesToday.length
               return (
-                <PageHeader title={getListTitle()} subtitle={`${openCount} remaining, ${completedCount} completed`} />
+                <PageHeader title={getListTitle()} subtitle={`${openCount} remaining, ${completedCount} completed`} onMenuClick={onMenuClick} />
               )
             })()}
           </div>
