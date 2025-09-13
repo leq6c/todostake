@@ -80,7 +80,7 @@ export function AccountModal() {
       <Separator />
 
       {/* Display Settings Section */}
-      <div className="space-y-3">
+      <div className="space-y-3 hidden">
         <div className="flex items-center gap-2">
           <Monitor className="h-4 w-4 text-muted-foreground" />
           <h4 className="text-sm font-medium">Display</h4>
@@ -156,7 +156,7 @@ export function AccountModal() {
       <Separator />
 
       {/* Security Section */}
-      <div className="space-y-3">
+      <div className="space-y-3 hidden">
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-muted-foreground" />
           <h4 className="text-sm font-medium">Security</h4>
@@ -185,7 +185,7 @@ export function AccountModal() {
 
       {/* Actions */}
       <div className="space-y-2">
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-sm">
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-sm hidden">
           <Key className="h-4 w-4" />
           Change Password
         </Button>

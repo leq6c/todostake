@@ -75,7 +75,7 @@ export function GenericBubbleModal({
       case "right-bottom":
         return "absolute -right-2 bottom-6 w-4 h-4 bg-background border-r border-b border-border transform rotate-45"
       case "left-top":
-        return "absolute -left-2 top-6 w-4 h-4 bg-background border-l border-t border-border transform rotate-45"
+        return "absolute -left-2 top-6 w-4 h-4 bg-background border-l border-b border-border transform rotate-45"
       case "left-bottom":
         return "absolute -left-2 bottom-6 w-4 h-4 bg-background border-l border-t border-border transform rotate-45"
       case "left-center":
@@ -86,7 +86,7 @@ export function GenericBubbleModal({
   }
 
   const getModalPosition = () => {
-    const gap = 16
+    const gap = 8
     switch (arrowPosition) {
       case "right-top":
       case "right-bottom":

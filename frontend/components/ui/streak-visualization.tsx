@@ -18,7 +18,7 @@ export function StreakVisualization({ streakData, maxAbsence, className = "" }: 
       }
     }
 
-    return data.completed ? "bg-green-500 dark:bg-green-600" : "bg-gray-300 dark:bg-gray-800"
+    return data.completed ? "bg-green-500 dark:bg-green-600" : "bg-gray-300 dark:bg-gray-600"
   }
 
   return (
@@ -28,7 +28,7 @@ export function StreakVisualization({ streakData, maxAbsence, className = "" }: 
         Array.from({ length: 16 - streakData.length }).map((_, index) => (
           <div
             key={`empty-${index}`}
-            className="w-3 h-3 min-w-3 min-h-3 rounded-sm bg-gray-300 dark:bg-gray-800"
+            className="w-3 h-3 min-w-3 min-h-3 rounded-sm bg-gray-300 dark:bg-gray-600"
           />
         ))
       )
