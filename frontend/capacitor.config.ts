@@ -6,9 +6,6 @@ const config: CapacitorConfig = {
   appName: "todohabit",
   webDir: "out",
   plugins: {
-    Keyboard: {
-      resize: KeyboardResize.None,
-    },
     GoogleAuth: {
       scopes: ["profile", "email"],
       // Optional: supply client IDs via env if you have them handy
