@@ -1,5 +1,6 @@
 "use client"
 
+import TodoAppMain from "@/components/app"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
@@ -14,7 +15,7 @@ export default function HomePage() {
     >
       <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto text-center">
         <div className="flex flex-col items-center gap-2">
-          <div className="text-4xl font-medium">WordBond</div>
+          <div className="text-4xl font-medium">TodoHabit</div>
           <div className="text-lg text-muted-foreground">Keep your word or lose your stake.</div>
           <p className="text-sm text-muted-foreground mt-2 max-w-lg">
             Stake tokens on your tasks and routines. Complete them to get your stake back, or lose it if you

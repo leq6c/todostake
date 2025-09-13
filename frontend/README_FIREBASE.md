@@ -37,3 +37,17 @@ Firestore
 
 Offline
 - Firestore persistence is enabled with multi-tab support. Data queues while offline and syncs when online.
+
+Capacitor (native) Google Sign-In
+- This app uses native Google Sign-In on iOS/Android to avoid CORS/popup issues.
+- Env vars: add optional Google client IDs to `.env.local`:
+  - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Web client ID)
+  - `NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID` (iOS OAuth client)
+  - `NEXT_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` (Android OAuth client)
+- iOS setup:
+  - Download `GoogleService-Info.plist` from Firebase Console and add it to `ios/App/App` in Xcode.
+  - In the iOS target, add a URL Type using the `REVERSED_CLIENT_ID` from the plist.
+  - Run `npx cap sync ios` and rebuild.
+- Android setup:
+  - Add `google-services.json` to the Android project (once Android is added).
+  - Ensure the OAuth client in Google Cloud has the correct SHA-1/256.
