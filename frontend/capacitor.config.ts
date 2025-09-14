@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
       // Use native providers only to obtain credentials; sign into Web SDK explicitly.
       skipNativeAuth: false,
       providers: ["google.com"],
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      authDomain: undefined,
     },
   },
 };
