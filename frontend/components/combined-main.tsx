@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -64,6 +64,11 @@ export function CombinedMain({
   const [newStakeAmount, setNewStakeAmount] = useState("")
   const [newStakeCurrency, setNewStakeCurrency] = useState("SOL")
   const [newProverInstructions, setNewProverInstructions] = useState("")
+  const [listMinHeight, setListMinHeight] = useState(0)
+  const elHeaderRef = useRef<HTMLDivElement>(null)
+  const elFooterRef = useRef<HTMLDivElement>(null)
+  const elContentRef = useRef<HTMLDivElement>(null)
+  const [triggerResize, setTriggerResize] = useState(false)
 
   const completedTodos = useMemo(() => todos.filter((t) => t.completed), [todos])
   const incompleteTodos = useMemo(() => todos.filter((t) => !t.completed), [todos])
@@ -279,6 +284,32 @@ export function CombinedMain({
     }
   }
 
+  useEffect(() => {
+    if (!elHeaderRef.current) return;
+    if (!elFooterRef.current) return;
+    if (!elContentRef.current) return;
+
+    // calc(100% - var(--safe-area-inset-bottom) - var(--safe-area-inset-top) - 10em)
+    const resize = () => {
+      const headerHeight = elHeaderRef.current?.clientHeight ?? 0
+      const footerHeight = elFooterRef.current?.clientHeight ?? 0
+      const contentHeight = elContentRef.current?.clientHeight ?? 0
+
+      let listMinHeight = document.body.clientHeight - headerHeight - footerHeight - contentHeight - 16;
+      if (listMinHeight < 0) listMinHeight = 0;
+
+      return setListMinHeight(listMinHeight)
+    }
+
+    window.addEventListener("resize", resize)
+
+    resize();
+
+    return () => {
+      window.removeEventListener("resize", resize)
+    };
+  }, [elHeaderRef, elFooterRef, elContentRef, todos, routines, triggerResize]);
+
   return (
     <div className="flex-1 flex flex-col min-h-0 relative h-full" onClick={handleBackgroundClick}>
       <div
@@ -286,7 +317,7 @@ export function CombinedMain({
         onClick={handleBackgroundClick}
       >
         <div className="w-full space-y-2 flex flex-col">
-          <div className="sticky top-0 z-1 mt-6 supports-[backdrop-filter]:backdrop-blur p-3 md:p-4 pt-safe">
+          <div className="sticky top-0 z-1 mt-6 supports-[backdrop-filter]:backdrop-blur p-3 md:p-4 pt-safe" ref={elHeaderRef}>
             {(() => {
               const openCount = incompleteTodos.length + openRoutines.length
               const completedCount = completedTodos.length + completedRoutinesToday.length + endedRoutines.length
@@ -295,7 +326,7 @@ export function CombinedMain({
               )
             })()}
           </div>
-          <div className="p-3 md:p-4">
+          <div className="p-3 md:p-4" ref={elContentRef}>
             {incompleteTodos.map((todo) => (
               <TodoItem key={`todo-${todo.id}`} todo={todo} />
             ))}
@@ -320,6 +351,7 @@ export function CombinedMain({
                 title="Completed"
                 count={completedTotal}
                 defaultOpen={activeList === "today"}
+                onOpenChange={() => setTriggerResize((prev) => !prev)}
               >
                 {completedTodos.map((todo) => (
                   <TodoItem key={`ctodo-${todo.id}`} todo={todo} isCompleted />
@@ -334,15 +366,17 @@ export function CombinedMain({
               )
             })()}
 
-            {incompleteTodos.length === 0 && openRoutines.length === 0 && (
+            {incompleteTodos.length === 0 && openRoutines.length === 0 && false && (
               <EmptyState title="All clear!" description="Add a new item to get started." />
             )}
           </div>
 
           <div className="flex-1"></div>
 
+          <div style={{minHeight: listMinHeight + "px"}}></div>
+
           {/* Bottom-fixed input area within layout (non-scrolling) */}
-          <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur sticky bottom-0 pb-safe" onClick={(e) => e.stopPropagation()}>
+          <div className="p-3 pt-2 supports-[backdrop-filter]:backdrop-blur sticky bottom-0 pb-safe" onClick={(e) => e.stopPropagation()} ref={elFooterRef}>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 {(["task", "daily", "weekly", "monthly"] as const).map((t) => (
@@ -369,7 +403,7 @@ export function CombinedMain({
                   />
                 </div>
               </div>
-              {newType === "task-------" && (
+              {newType === "task" && false && (
                 <div className="flex gap-2 items-center">
                   <span className="text-xs text-muted-foreground">Stake</span>
                   <Input

@@ -10,6 +10,7 @@ interface CollapsibleSectionProps {
   children: React.ReactNode
   defaultOpen?: boolean
   className?: string
+  onOpenChange?: (isOpen: boolean) => void
 }
 
 export function CollapsibleSection({
@@ -18,6 +19,7 @@ export function CollapsibleSection({
   children,
   defaultOpen = false,
   className = "",
+  onOpenChange,
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
@@ -25,7 +27,10 @@ export function CollapsibleSection({
     <div className={`pt-4 ${className}`}>
       <div
         className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded p-1 -ml-1"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen)
+          onOpenChange?.(isOpen)
+        }}
       >
         {isOpen ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />

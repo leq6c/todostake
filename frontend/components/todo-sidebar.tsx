@@ -15,17 +15,20 @@ interface TodoSidebarProps {
   activeList: string
   setActiveList: (list: string) => void
   todoCounts: TodoCounts
+  isMobile: boolean
 }
 
 export function TodoSidebar({
   activeList,
   setActiveList,
   todoCounts,
+  isMobile,
 }: TodoSidebarProps) {
   const { showModal } = useModal()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const { user } = useAuth()
+  const [lastTouchTime, setLastTouchTime] = useState<number | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -35,7 +38,7 @@ export function TodoSidebar({
     setTheme(newTheme)
   }
 
-  const handleAccountClick = (event: React.MouseEvent) => {
+  const handleAccountClick = (event: React.MouseEvent | React.TouchEvent) => {
     const rect = event.currentTarget.getBoundingClientRect()
     showModal({
       type: "account",
@@ -43,6 +46,19 @@ export function TodoSidebar({
       arrowPosition: "left-top",
     })
   }
+
+  const handleEvents = (fn: () => void, event: React.MouseEvent | React.TouchEvent) => {
+    if (event.type === "click") {
+      if (lastTouchTime && Date.now() - lastTouchTime < 300) {
+        return;
+      }
+      setLastTouchTime(Date.now())
+      fn()
+    } else {
+      setLastTouchTime(Date.now())
+      fn()
+    }
+  };
 
   const defaultLists = [
     { id: "home", name: "Home", icon: HomeIcon, count: 0 },
@@ -57,7 +73,8 @@ export function TodoSidebar({
       <div className="p-4 border-b border-sidebar-border/70 mt-safe">
         <div
           className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
-          onClick={handleAccountClick}
+          onClick={(e) => handleEvents(() => handleAccountClick(e), e)}
+          onTouchStart={(e) => handleEvents(() => handleAccountClick(e), e)}
         >
           <Avatar className="h-10 w-10 md:h-8 md:w-8">
             <AvatarFallback className="bg-foreground text-background font-medium text-base md:text-sm">
@@ -79,7 +96,8 @@ export function TodoSidebar({
               <Button
                 variant={theme === "light" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => handleThemeChange("light")}
+                onTouchStart={(e) => handleEvents(() => handleThemeChange("light"), e)}
+                onClick={(e) => handleEvents(() => handleThemeChange("light"), e)}
                 className="flex-1 h-10 md:h-8"
               >
                 <Sun className="h-5 w-5 md:h-3 md:w-3" />
@@ -87,7 +105,8 @@ export function TodoSidebar({
               <Button
                 variant={theme === "dark" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => handleThemeChange("dark")}
+                onTouchStart={(e) => handleEvents(() => handleThemeChange("dark"), e)}
+                onClick={(e) => handleEvents(() => handleThemeChange("dark"), e)}
                 className="flex-1 h-10 md:h-8"
               >
                 <Moon className="h-5 w-5 md:h-3 md:w-3" />
@@ -107,7 +126,8 @@ export function TodoSidebar({
                 key={list.id}
                 variant={activeList === list.id ? "secondary" : "ghost"}
                 className="w-full justify-start gap-3 md:gap-2 h-12 md:h-8 text-base md:text-sm hover:bg-muted/30"
-                onClick={() => setActiveList(list.id)}
+                onTouchStart={(e) => handleEvents(() => setActiveList(list.id), e)}
+                onClick={(e) => handleEvents(() => setActiveList(list.id), e)}
               >
                 <Icon className="h-5 w-5 md:h-4 md:w-4" />
                 <span className="flex-1 text-left">{list.name}</span>
@@ -123,7 +143,8 @@ export function TodoSidebar({
           <Button
             variant={activeList === "reliability" ? "secondary" : "ghost"}
             className="w-full justify-start gap-3 md:gap-2 h-12 md:h-8 text-base md:text-sm hover:bg-muted/30 hidden"
-            onClick={() => setActiveList("reliability")}
+            onTouchStart={(e) => handleEvents(() => setActiveList("reliability"), e)}
+            onClick={(e) => handleEvents(() => setActiveList("reliability"), e)}
           >
             <TrendingUp className="h-5 w-5 md:h-4 md:w-4" />
             <span className="flex-1 text-left">Score</span>

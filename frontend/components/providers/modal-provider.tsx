@@ -49,8 +49,10 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   const [modalConfig, setModalConfig] = useState<ModalConfig | null>(null)
   const [chatMessage, setChatMessage] = useState("")
   const [chatHistory, setChatHistory] = useState<Array<{ role: "user" | "ai"; message: string }>>([])
+  const [launchTime, setLaunchTime] = useState<number | null>(new Date().getTime())
 
   const showModal = (config: ModalConfig) => {
+    setLaunchTime(new Date().getTime())
     setModalConfig(config)
     if (config.type === "proof") {
       setChatHistory([{ role: "ai", message: "Prove it!" }])
@@ -59,6 +61,9 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   }
 
   const hideModal = () => {
+    if (launchTime && new Date().getTime() - launchTime < 500) {
+      return;
+    }
     setModalConfig(null)
     setChatHistory([])
     setChatMessage("")

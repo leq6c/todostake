@@ -37,12 +37,12 @@ export function CircularCheckbox({
     variant === "danger" && checked ? "bg-red-500 dark:bg-red-400" : checked ? "bg-foreground" : "bg-transparent"
 
   return (
-    <div
+    <button
       className={`h-5.5 w-5.5 mt-[-1.5px] md:mt-[-1px] md:h-5 md:w-5 rounded-full border-[1.5px] ${borderColor} cursor-pointer flex items-center justify-center transition-colors ${bgColor} ${className}`}
       onClick={onClick}
     >
       {checked && <Check className={`h-3.5 w-3.5 md:h-3 md:w-3 text-background`} />}
-    </div>
+    </button>
   );
     /*
   return (

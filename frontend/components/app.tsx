@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast"
 import { CombinedMain } from "@/components/combined-main"
 import { HomeDex } from "@/components/home-dex"
 import { useProfile } from "@/hooks/use-profile"
+import AnimatedBackground from "@/components/ui/animated-background"
 
 export interface TodoAppMainProps {
   floatingMode?: boolean
@@ -42,6 +43,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
   // Mobile sidebar drag state
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false)
   const [dragX, setDragX] = useState(0)
+  const [dragStartTime, setDragStartTime] = useState<number | null>(null)
   const touchStartXRef = useRef<number | null>(null)
   const touchStartYRef = useRef<number | null>(null)
   // Sidebar close gesture refs
@@ -92,6 +94,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
 
   const onTouchMoveEdge: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (uiState.sidebarOpen) return
+    if (uiState.rightPanelOpen) return
     const touch = e.touches[0]
     const startX = touchStartXRef.current
     const startY = touchStartYRef.current
@@ -233,6 +236,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           : 0
       : 0
     if (openProgress <= 0) return null
+    // sidebar backdrop
     return (
       <div
         className="md:hidden absolute inset-0 bg-black z-40"
@@ -241,7 +245,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           transition: isDraggingSidebar ? "none" : "opacity 300ms ease-in-out",
           pointerEvents: uiState.sidebarOpen ? "auto" : "none",
         }}
-        onClick={() => uiState.sidebarOpen && uiState.setSidebarOpen(false)}
+        onClick={() => false && uiState.sidebarOpen && uiState.setSidebarOpen(false)}
         onTouchStart={(e) => {
           if (!uiState.isMobile || !uiState.sidebarOpen) return
           const t = e.touches[0]
@@ -249,6 +253,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           closeStartYRef.current = t.clientY
           setIsDraggingSidebar(false)
           setDragX(uiState.sidebarWidth)
+          setDragStartTime(Date.now())
         }}
         onTouchMove={(e) => {
           if (!uiState.isMobile || !uiState.sidebarOpen) return
@@ -269,6 +274,14 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           setDragX(next)
         }}
         onTouchEnd={() => {
+          if (!isDraggingSidebar && dragStartTime && Date.now() - dragStartTime < 200) {
+            setTimeout(()=>{
+              endDrag(false)
+              closeStartXRef.current = null
+              closeStartYRef.current = null
+            }, 100);
+            return
+          }
           if (!isDraggingSidebar) return
           const shouldRemainOpen = dragX > uiState.sidebarWidth * 0.7
           endDrag(shouldRemainOpen)
@@ -297,6 +310,13 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
         >
         {sidebarOverlay}
 
+        {uiState.isMobile && <div className="absolute inset-0 w-full h-full" style={{
+          backgroundImage: "url(/bg.png)",
+          backgroundPosition: "left 50%",
+          opacity: 0.4,
+        }}>
+        </div>}
+
         <div
           ref={uiState.sidebarRef}
           className={`
@@ -316,6 +336,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
             closeStartYRef.current = t.clientY
             setIsDraggingSidebar(false)
             setDragX(uiState.sidebarWidth)
+            setDragStartTime(Date.now())
           }}
           onTouchMove={(e) => {
             if (!uiState.isMobile || !uiState.sidebarOpen) return
@@ -336,6 +357,14 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
             setDragX(next)
           }}
           onTouchEnd={() => {
+            if (!isDraggingSidebar && dragStartTime && Date.now() - dragStartTime < 200) {
+              console.log("close")
+              endDrag(false)
+              closeStartXRef.current = null
+              closeStartYRef.current = null
+              return
+            }
+
             if (!isDraggingSidebar) return
             const shouldRemainOpen = dragX > uiState.sidebarWidth * 0.7
             endDrag(shouldRemainOpen)
@@ -353,6 +382,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
               }
             }}
             todoCounts={todoCounts}
+            isMobile={uiState.isMobile}
           />
 
           <div
@@ -444,6 +474,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
                 setRightDragX(RIGHT_PANEL_WIDTH)
               }}
               onTouchStart={(e) => {
+                console.log("touch start", isDraggingRightPanel, rightDragX, uiState.isMobile)
                 if (!uiState.isMobile) return
                 const t = e.touches[0]
                 panelStartXRef.current = t.clientX
@@ -468,17 +499,24 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
                 setRightDragX(next)
               }}
               onTouchEnd={() => {
+                console.log("touch end", isDraggingRightPanel, rightDragX, uiState.isMobile)
                 if (!uiState.isMobile || !isDraggingRightPanel) return
                 const shouldClose = rightDragX > RIGHT_PANEL_WIDTH * 0.3
                 setIsDraggingRightPanel(false)
                 if (shouldClose) {
                   setIsClosingRightPanel(true)
                   setRightDragX(RIGHT_PANEL_WIDTH)
+                  setTimeout(()=>{
+                    setIsClosingRightPanel(false)
+                    selectionState.closeRightPanel()
+                    setRightDragX(0)
+                  }, 300);
                 } else {
                   setRightDragX(0)
                 }
                 panelStartXRef.current = null
                 panelStartYRef.current = null
+                console.log("should close", shouldClose)
               }}
             />
             <div
@@ -489,6 +527,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
                 touchAction: "pan-y",
               }}
               onTransitionEnd={() => {
+                console.log("transition end", isClosingRightPanel, rightDragX, RIGHT_PANEL_WIDTH)
                 if (isClosingRightPanel && rightDragX === RIGHT_PANEL_WIDTH) {
                   setIsClosingRightPanel(false)
                   selectionState.closeRightPanel()
@@ -526,6 +565,11 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
                 if (shouldClose) {
                   setIsClosingRightPanel(true)
                   setRightDragX(RIGHT_PANEL_WIDTH)
+                  setTimeout(()=>{
+                    setIsClosingRightPanel(false)
+                    selectionState.closeRightPanel()
+                    setRightDragX(0)
+                  }, 300);
                 } else {
                   setRightDragX(0)
                 }
@@ -620,6 +664,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           onTouchMove={onTouchMoveEdge}
           onTouchEnd={onTouchEndEdge}
           onTouchCancel={onTouchEndEdge}
+          hidden={uiState.rightPanelOpen}
         />
       </div>
     </ThemeProvider>
