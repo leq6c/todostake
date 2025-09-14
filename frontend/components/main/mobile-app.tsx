@@ -9,9 +9,7 @@ export default function HomePage() {
         (async function(){
             const safeAreaData = await SafeArea.getSafeAreaInsets();
             const {insets} = safeAreaData;
-            console.log("===INSETS");
             for (const [key, value] of Object.entries(insets)) {
-              console.log("key", key, "value", value);
                 document.documentElement.style.setProperty(
                     `--safe-area-inset-${key}`,
                     `${value}px`,
