@@ -23,6 +23,7 @@ export const todoConverter: FirestoreDataConverter<Todo> = {
       completed: !!todo.completed,
       // store as epoch ms
       createdAt: typeof todo.createdAt === "number" ? todo.createdAt : Date.now(),
+      completedAt: typeof todo.completedAt === "number" ? todo.completedAt : null,
       list: todo.list,
       dueDate: typeof todo.dueDate === "number" ? todo.dueDate : null,
       starred: !!todo.starred,
@@ -42,6 +43,10 @@ export const todoConverter: FirestoreDataConverter<Todo> = {
       text: data.text,
       completed: !!data.completed,
       createdAt,
+      completedAt: (() => {
+        const v = toMillis(data.completedAt)
+        return typeof v === "number" ? v : undefined
+      })(),
       list: data.list || "tasks",
       dueDate: typeof dueDate === "number" ? dueDate : undefined,
       starred: !!data.starred,

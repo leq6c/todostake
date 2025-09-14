@@ -169,7 +169,7 @@ export function CombinedMain({
     return (
       <div data-role="routine-item"
         className={`rounded-lg px-3 transition-colors cursor-pointer ${
-          isInactive ? "opacity-70" : ""
+          isInactive || isCompletedToday ? "opacity-70" : ""
         } ${isSelected ? "bg-accent/50 hover:bg-card-foreground/8" : "hover:bg-card-foreground/8"}`}
         onClick={(e) => {
           e.stopPropagation()

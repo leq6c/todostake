@@ -74,12 +74,14 @@ export function useTodoOperations() {
 
     const createdAt = toMillis(data?.createdAt) ?? Date.now()
     const dueDate = toMillis(data?.dueDate)
+    const completedAt = toMillis(data?.completedAt)
 
     return {
       id,
       text: data?.text,
       completed: !!data?.completed,
       createdAt,
+      completedAt: typeof completedAt === "number" ? completedAt : undefined,
       list: data?.list || "tasks",
       dueDate: typeof dueDate === "number" ? dueDate : undefined,
       starred: !!data?.starred,
@@ -263,17 +265,18 @@ export function useTodoOperations() {
       const current = todos.find((t) => t.id === id);
       if (!current) return;
       const newCompleted = !current.completed;
+      const completedAt = newCompleted ? Date.now() : null;
       if (Capacitor.isNativePlatform()) {
         await FirebaseFirestore.updateDocument({
           reference: `${userTodosCol.path}/${id}`,
-          data: { completed: newCompleted },
+          data: { completed: newCompleted, completedAt },
         });
       } else {
-        await updateDoc(doc(userTodosCol, id), { completed: newCompleted });
+        await updateDoc(doc(userTodosCol, id), { completed: newCompleted, completedAt });
       }
 
       // Update reliability score (frontend only)
-      const updatedTemp = { ...current, completed: newCompleted };
+      const updatedTemp = { ...current, completed: newCompleted, completedAt: completedAt ?? undefined } as Todo;
       const context = getTaskCompletionContext(updatedTemp);
       const action = newCompleted ? "complete_task" : "miss_task";
       const reason = generateReliabilityReason(
@@ -308,11 +311,18 @@ export function useTodoOperations() {
         v === null ? null : v === undefined ? undefined : v instanceof Date ? v.getTime() : typeof v === "number" ? v : undefined
 
       const toUpdateWeb: Record<string, any> = { ...updates };
+      // Auto-manage completedAt when completed is toggled via updateTodo
+      if ("completed" in updates && updates.completed !== undefined && !("completedAt" in updates)) {
+        toUpdateWeb.completedAt = updates.completed ? Date.now() : null;
+      }
       if ("dueDate" in updates) {
         toUpdateWeb.dueDate = toEpoch(updates.dueDate);
       }
       if ("createdAt" in updates) {
         toUpdateWeb.createdAt = toEpoch(updates.createdAt);
+      }
+      if ("completedAt" in updates) {
+        toUpdateWeb.completedAt = toEpoch(updates.completedAt);
       }
 
       if (Capacitor.isNativePlatform()) {

@@ -393,6 +393,12 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle, a
         />
       </div>
 
+      <div className="space-y-3">
+        <div className="text-xs text-muted-foreground">
+          Last completed: {todo.completedAt ? new Date(todo.completedAt ?? 0).toLocaleDateString() : ""}
+        </div>
+      </div>
+
       {/* Stake Section */}
       {profile?.walletConnected && (
         <StakeSection
