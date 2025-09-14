@@ -44,7 +44,17 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
   const [dragX, setDragX] = useState(0)
   const touchStartXRef = useRef<number | null>(null)
   const touchStartYRef = useRef<number | null>(null)
+  // Sidebar close gesture refs
+  const closeStartXRef = useRef<number | null>(null)
+  const closeStartYRef = useRef<number | null>(null)
+  // Right detail panel drag-to-close state
+  const [isDraggingRightPanel, setIsDraggingRightPanel] = useState(false)
+  const [rightDragX, setRightDragX] = useState(0)
+  const [isClosingRightPanel, setIsClosingRightPanel] = useState(false)
+  const panelStartXRef = useRef<number | null>(null)
+  const panelStartYRef = useRef<number | null>(null)
   const draggingRef = useRef(false)
+  const RIGHT_PANEL_WIDTH = 320
 
   const selectionState = useSelectionState({
     selectedTodo: appState.selectedTodo,
@@ -107,7 +117,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
     draggingRef.current = false
     touchStartXRef.current = null
     touchStartYRef.current = null
-    if (commitOpen) uiState.setSidebarOpen(true)
+    uiState.setSidebarOpen(!!commitOpen)
   }
 
   const onTouchEndEdge: React.TouchEventHandler<HTMLDivElement> = () => {
@@ -213,6 +223,62 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
     )
   }
 
+  // Sidebar overlay element (mobile only)
+  const sidebarOverlay = (() => {
+    const openProgress = uiState.isMobile
+      ? isDraggingSidebar
+        ? Math.max(0, Math.min(1, dragX / uiState.sidebarWidth))
+        : uiState.sidebarOpen
+          ? 1
+          : 0
+      : 0
+    if (openProgress <= 0) return null
+    return (
+      <div
+        className="md:hidden absolute inset-0 bg-black z-40"
+        style={{
+          opacity: 0.5 * openProgress,
+          transition: isDraggingSidebar ? "none" : "opacity 300ms ease-in-out",
+          pointerEvents: uiState.sidebarOpen ? "auto" : "none",
+        }}
+        onClick={() => uiState.sidebarOpen && uiState.setSidebarOpen(false)}
+        onTouchStart={(e) => {
+          if (!uiState.isMobile || !uiState.sidebarOpen) return
+          const t = e.touches[0]
+          closeStartXRef.current = t.clientX
+          closeStartYRef.current = t.clientY
+          setIsDraggingSidebar(false)
+          setDragX(uiState.sidebarWidth)
+        }}
+        onTouchMove={(e) => {
+          if (!uiState.isMobile || !uiState.sidebarOpen) return
+          const sx = closeStartXRef.current
+          const sy = closeStartYRef.current
+          if (sx == null || sy == null) return
+          const t = e.touches[0]
+          const dx = t.clientX - sx // negative when swiping left
+          const dy = Math.abs(t.clientY - sy)
+          if (!isDraggingSidebar) {
+            if (dx < -10 && Math.abs(dx) > dy) {
+              setIsDraggingSidebar(true)
+            } else {
+              return
+            }
+          }
+          const next = Math.max(0, Math.min(uiState.sidebarWidth + dx, uiState.sidebarWidth))
+          setDragX(next)
+        }}
+        onTouchEnd={() => {
+          if (!isDraggingSidebar) return
+          const shouldRemainOpen = dragX > uiState.sidebarWidth * 0.7
+          endDrag(shouldRemainOpen)
+          closeStartXRef.current = null
+          closeStartYRef.current = null
+        }}
+      />
+    )
+  })()
+
   return (
     <ThemeProvider>
       <div
@@ -229,27 +295,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
               : "relative w-full h-screen md:h-screen bg-background overflow-hidden"
           }
         >
-        {(() => {
-          const openProgress = uiState.isMobile
-            ? uiState.sidebarOpen
-              ? 1
-              : isDraggingSidebar
-                ? Math.max(0, Math.min(1, dragX / uiState.sidebarWidth))
-                : 0
-            : 0
-          if (openProgress <= 0) return null
-          return (
-            <div
-              className="md:hidden absolute inset-0 bg-black z-40"
-              style={{
-                opacity: 0.5 * openProgress,
-                transition: isDraggingSidebar ? "none" : "opacity 300ms ease-in-out",
-                pointerEvents: uiState.sidebarOpen ? "auto" : "none",
-              }}
-              onClick={() => uiState.sidebarOpen && uiState.setSidebarOpen(false)}
-            />
-          )
-        })()}
+        {sidebarOverlay}
 
         <div
           ref={uiState.sidebarRef}
@@ -259,9 +305,42 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           style={{
             width: `${uiState.sidebarWidth}px`,
             transform: uiState.isMobile
-              ? `translateX(${uiState.sidebarOpen ? 0 : isDraggingSidebar ? -uiState.sidebarWidth + dragX : -uiState.sidebarWidth}px)`
+              ? `translateX(${isDraggingSidebar ? -uiState.sidebarWidth + dragX : uiState.sidebarOpen ? 0 : -uiState.sidebarWidth}px)`
               : undefined,
             transition: isDraggingSidebar ? "none" : "transform 300ms ease-in-out",
+          }}
+          onTouchStart={(e) => {
+            if (!uiState.isMobile || !uiState.sidebarOpen) return
+            const t = e.touches[0]
+            closeStartXRef.current = t.clientX
+            closeStartYRef.current = t.clientY
+            setIsDraggingSidebar(false)
+            setDragX(uiState.sidebarWidth)
+          }}
+          onTouchMove={(e) => {
+            if (!uiState.isMobile || !uiState.sidebarOpen) return
+            const sx = closeStartXRef.current
+            const sy = closeStartYRef.current
+            if (sx == null || sy == null) return
+            const t = e.touches[0]
+            const dx = t.clientX - sx
+            const dy = Math.abs(t.clientY - sy)
+            if (!isDraggingSidebar) {
+              if (dx < -10 && Math.abs(dx) > dy) {
+                setIsDraggingSidebar(true)
+              } else {
+                return
+              }
+            }
+            const next = Math.max(0, Math.min(uiState.sidebarWidth + dx, uiState.sidebarWidth))
+            setDragX(next)
+          }}
+          onTouchEnd={() => {
+            if (!isDraggingSidebar) return
+            const shouldRemainOpen = dragX > uiState.sidebarWidth * 0.7
+            endDrag(shouldRemainOpen)
+            closeStartXRef.current = null
+            closeStartYRef.current = null
           }}
         >
           <TodoSidebar
@@ -342,40 +421,186 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           appState.activeList !== "home" &&
           (appState.selectedTodo || appState.selectedRoutineId) && (
           <div className="absolute right-0 top-0 bottom-0 z-30">
-            <div className="fixed top-0 left-0 w-full h-full bg-black/50 z-[-1] backdrop-animate" onClick={selectionState.closeRightPanel}></div>
-            {appState.selectedTodo ? (
-              <TodoDetailPanel
-                todo={todoOps.todos.find((t) => t.id === appState.selectedTodo?.id) || appState.selectedTodo}
-                onClose={selectionState.closeRightPanel}
-                onUpdate={todoOps.updateTodo}
-                onDelete={todoOps.deleteTodo}
-                onToggle={todoOps.toggleTodo}
-              />
-            ) : appState.selectedRoutineId ? (
-              <RoutineDetailPanel
-                routine={
-                  appState.selectedRoutineId
-                    ? routineOps.routines.find((r) => r.id === appState.selectedRoutineId) || null
-                    : null
+            <div
+              className="fixed top-0 left-0 w-full h-full bg-black z-0"
+              style={{
+                touchAction: "none",
+                opacity: isDraggingRightPanel
+                  ? Math.max(0, Math.min(0.5, 0.5 * (1 - rightDragX / RIGHT_PANEL_WIDTH)))
+                  : isClosingRightPanel
+                    ? 0
+                    : 0.5,
+                transition: isDraggingRightPanel ? "none" : "opacity 300ms ease-in-out",
+              }}
+              onClick={() => {
+                if (!uiState.isMobile || isClosingRightPanel) return
+                setIsClosingRightPanel(true)
+                setRightDragX(RIGHT_PANEL_WIDTH)
+              }}
+              onTouchStart={(e) => {
+                if (!uiState.isMobile) return
+                const t = e.touches[0]
+                panelStartXRef.current = t.clientX
+                panelStartYRef.current = t.clientY
+              }}
+              onTouchMove={(e) => {
+                if (!uiState.isMobile) return
+                const sx = panelStartXRef.current
+                const sy = panelStartYRef.current
+                if (sx == null || sy == null) return
+                const t = e.touches[0]
+                const dx = t.clientX - sx
+                const dy = Math.abs(t.clientY - sy)
+                if (!isDraggingRightPanel) {
+                  if (dx > 10 && dx > dy) {
+                    setIsDraggingRightPanel(true)
+                  } else {
+                    return
+                  }
                 }
-                onClose={selectionState.closeRightPanel}
-                onUpdate={routineOps.updateRoutine}
-                onDelete={routineOps.deleteRoutine}
-                onToggle={routineOps.toggleRoutine}
-                onStop={routineOps.stopRoutine}
-                onPause={routineOps.pauseRoutine}
-                // Default detail type to the routine's own type; fallback daily
-                type={
-                  (appState.selectedRoutineId
-                    ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
-                        | "daily"
-                        | "weekly"
-                        | "monthly"
-                        | undefined)
-                    : undefined) || "daily"
+                const next = Math.max(0, Math.min(dx, RIGHT_PANEL_WIDTH))
+                setRightDragX(next)
+              }}
+              onTouchEnd={() => {
+                if (!uiState.isMobile || !isDraggingRightPanel) return
+                const shouldClose = rightDragX > RIGHT_PANEL_WIDTH * 0.3
+                setIsDraggingRightPanel(false)
+                if (shouldClose) {
+                  setIsClosingRightPanel(true)
+                  setRightDragX(RIGHT_PANEL_WIDTH)
+                } else {
+                  setRightDragX(0)
                 }
+                panelStartXRef.current = null
+                panelStartYRef.current = null
+              }}
+            />
+            <div
+              className="relative h-full z-10"
+              style={{
+                transform: `translateX(${(isDraggingRightPanel || isClosingRightPanel) ? rightDragX : 0}px)`,
+                transition: isDraggingRightPanel ? "none" : "transform 300ms ease-in-out",
+                touchAction: "pan-y",
+              }}
+              onTransitionEnd={() => {
+                if (isClosingRightPanel && rightDragX === RIGHT_PANEL_WIDTH) {
+                  setIsClosingRightPanel(false)
+                  selectionState.closeRightPanel()
+                  setRightDragX(0)
+                }
+              }}
+              onTouchStart={(e) => {
+                if (!uiState.isMobile) return
+                const t = e.touches[0]
+                panelStartXRef.current = t.clientX
+                panelStartYRef.current = t.clientY
+              }}
+              onTouchMove={(e) => {
+                if (!uiState.isMobile) return
+                const sx = panelStartXRef.current
+                const sy = panelStartYRef.current
+                if (sx == null || sy == null) return
+                const t = e.touches[0]
+                const dx = t.clientX - sx
+                const dy = Math.abs(t.clientY - sy)
+                if (!isDraggingRightPanel) {
+                  if (dx > 10 && dx > dy) {
+                    setIsDraggingRightPanel(true)
+                  } else {
+                    return
+                  }
+                }
+                const next = Math.max(0, Math.min(dx, RIGHT_PANEL_WIDTH))
+                setRightDragX(next)
+              }}
+              onTouchEnd={() => {
+                if (!uiState.isMobile || !isDraggingRightPanel) return
+                const shouldClose = rightDragX > RIGHT_PANEL_WIDTH * 0.3
+                setIsDraggingRightPanel(false)
+                if (shouldClose) {
+                  setIsClosingRightPanel(true)
+                  setRightDragX(RIGHT_PANEL_WIDTH)
+                } else {
+                  setRightDragX(0)
+                }
+                panelStartXRef.current = null
+                panelStartYRef.current = null
+              }}
+            >
+              {/* Gesture handle to close: swipe left->right */}
+              <div
+                className="absolute inset-y-0 left-0 w-6 z-10"
+                style={{ touchAction: "none" }}
+                onTouchStart={(e) => {
+                  if (!uiState.isMobile) return
+                  const t = e.touches[0]
+                  panelStartXRef.current = t.clientX
+                  panelStartYRef.current = t.clientY
+                }}
+                onTouchMove={(e) => {
+                  if (!uiState.isMobile) return
+                  const sx = panelStartXRef.current
+                  const sy = panelStartYRef.current
+                  if (sx == null || sy == null) return
+                  const t = e.touches[0]
+                  const dx = t.clientX - sx
+                  const dy = Math.abs(t.clientY - sy)
+                  if (!isDraggingRightPanel) {
+                    if (dx > 10 && dx > dy) {
+                      setIsDraggingRightPanel(true)
+                    } else {
+                      return
+                    }
+                  }
+                  const RIGHT_PANEL_WIDTH = 320
+                  const next = Math.max(0, Math.min(dx, RIGHT_PANEL_WIDTH))
+                  setRightDragX(next)
+                }}
+                onTouchEnd={() => {
+                  if (!uiState.isMobile || !isDraggingRightPanel) return
+                  const RIGHT_PANEL_WIDTH = 320
+                  const shouldClose = rightDragX > RIGHT_PANEL_WIDTH * 0.3
+                  setIsDraggingRightPanel(false)
+                  setRightDragX(0)
+                  panelStartXRef.current = null
+                  panelStartYRef.current = null
+                  if (shouldClose) selectionState.closeRightPanel()
+                }}
               />
-            ) : null}
+              {appState.selectedTodo ? (
+                <TodoDetailPanel
+                  todo={todoOps.todos.find((t) => t.id === appState.selectedTodo?.id) || appState.selectedTodo}
+                  onClose={selectionState.closeRightPanel}
+                  onUpdate={todoOps.updateTodo}
+                  onDelete={todoOps.deleteTodo}
+                  onToggle={todoOps.toggleTodo}
+                />
+              ) : appState.selectedRoutineId ? (
+                <RoutineDetailPanel
+                  routine={
+                    appState.selectedRoutineId
+                      ? routineOps.routines.find((r) => r.id === appState.selectedRoutineId) || null
+                      : null
+                  }
+                  onClose={selectionState.closeRightPanel}
+                  onUpdate={routineOps.updateRoutine}
+                  onDelete={routineOps.deleteRoutine}
+                  onToggle={routineOps.toggleRoutine}
+                  onStop={routineOps.stopRoutine}
+                  onPause={routineOps.pauseRoutine}
+                  // Default detail type to the routine's own type; fallback daily
+                  type={
+                    (appState.selectedRoutineId
+                      ? (routineOps.routines.find((r) => r.id === appState.selectedRoutineId)?.type as
+                          | "daily"
+                          | "weekly"
+                          | "monthly"
+                          | undefined)
+                      : undefined) || "daily"
+                  }
+                />
+              ) : null}
+            </div>
           </div>
         )}
         </div>
