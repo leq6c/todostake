@@ -100,9 +100,21 @@ export function CombinedMain({
   }
 
   // Routines grouping
-  const activeRoutines = useMemo(() => routines.filter((r) => !r.stopped && !r.paused), [routines])
-  const inactiveRoutines = useMemo(() => routines.filter((r) => r.stopped || r.paused), [routines])
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], [])
+  const isPastEnd = (r: Routine) => {
+    if (!r.endDate) return false
+    const end = new Date(r.endDate)
+    const endOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+    const now = new Date()
+    const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    return todayOnly > endOnly
+  }
+  const endedRoutines = useMemo(() => routines.filter(isPastEnd), [routines])
+  const activeRoutines = useMemo(
+    () => routines.filter((r) => !r.stopped && !r.paused && !isPastEnd(r)),
+    [routines],
+  )
+  const inactiveRoutines = useMemo(() => routines.filter((r) => r.stopped || r.paused), [routines])
   const openRoutines = useMemo(
     () => activeRoutines.filter((r) => !r.completedDates.includes(todayStr)),
     [activeRoutines, todayStr],
@@ -137,7 +149,15 @@ export function CombinedMain({
 
   const RoutineItem = ({ routine }: { routine: Routine }) => {
     const today = new Date().toISOString().split("T")[0]
-    const isCompletedToday = routine.completedDates.includes(todayStr)
+    const ended = (() => {
+      if (!routine.endDate) return false
+      const end = new Date(routine.endDate)
+      const endOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+      const now = new Date()
+      const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+      return todayOnly > endOnly
+    })()
+    const isCompletedToday = ended || routine.completedDates.includes(todayStr)
     const isSelected = selectedRoutineId === routine.id
     const isInactive = !!routine.stopped || !!routine.paused
     const streakData = generateStreakData(routine)
@@ -158,7 +178,7 @@ export function CombinedMain({
                 checked={isCompletedToday}
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (!isInactive) toggleRoutine(routine.id)
+                  if (!isInactive && !ended) toggleRoutine(routine.id)
                 }}
                 className={isInactive ? "opacity-40" : ""}
               />
@@ -176,7 +196,7 @@ export function CombinedMain({
                   <StakeBadge amount={routine.stakeAmount} variant={isInactive ? "danger" : "success"} />
                 )}
               </div>
-              <StreakVisualization streakData={streakData} maxAbsence={routine.maxAbsence} className="mt-2 mb-1" />
+              <StreakVisualization streakData={streakData} maxAbsence={ended ? undefined : routine.maxAbsence} className="mt-2 mb-1" />
             </div>
           </div>
           <div className="flex items-center gap-1 ml-2">
@@ -267,7 +287,7 @@ export function CombinedMain({
           <div className="sticky top-0 z-1 mt-6 supports-[backdrop-filter]:backdrop-blur p-3 md:p-4 pt-safe">
             {(() => {
               const openCount = incompleteTodos.length + openRoutines.length
-              const completedCount = completedTodos.length + completedRoutinesToday.length
+              const completedCount = completedTodos.length + completedRoutinesToday.length + endedRoutines.length
               return (
                 <PageHeader title={getListTitle()} subtitle={`${openCount} remaining, ${completedCount} completed`} onMenuClick={onMenuClick} />
               )
@@ -289,10 +309,14 @@ export function CombinedMain({
               </CollapsibleSection>
             )}
 
-            {(completedTodos.length + completedRoutinesToday.length) > 0 && (
+            {(() => {
+              const endedForView = activeList === "today" || activeList === "planned" ? [] : endedRoutines
+              const completedTotal = completedTodos.length + completedRoutinesToday.length + endedForView.length
+              if (completedTotal <= 0) return null
+              return (
               <CollapsibleSection
                 title="Completed"
-                count={completedTodos.length + completedRoutinesToday.length}
+                count={completedTotal}
                 defaultOpen={activeList === "today"}
               >
                 {completedTodos.map((todo) => (
@@ -301,8 +325,12 @@ export function CombinedMain({
                 {completedRoutinesToday.map((r) => (
                   <RoutineItem key={`croutine-${r.id}`} routine={r} />
                 ))}
+                {endedForView.map((r) => (
+                  <RoutineItem key={`eroutine-${r.id}`} routine={r} />
+                ))}
               </CollapsibleSection>
-            )}
+              )
+            })()}
 
             {incompleteTodos.length === 0 && openRoutines.length === 0 && (
               <EmptyState title="All clear!" description="Add a new item to get started." />

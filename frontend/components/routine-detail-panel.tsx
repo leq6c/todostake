@@ -295,6 +295,14 @@ export function RoutineDetailPanel({
 
   const today = new Date().toISOString().split("T")[0]
   const isCompletedToday = routine.completedDates.includes(today)
+  const ended = (() => {
+    if (!routine.endDate) return false
+    const end = new Date(routine.endDate)
+    const endOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+    const now = new Date()
+    const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    return todayOnly > endOnly
+  })()
   const streakData = generateStreakData()
 
   const getSuccessRate = () => {
@@ -405,7 +413,7 @@ export function RoutineDetailPanel({
             <span className="font-medium">{routine.maxStreak} days</span>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
-            <StreakVisualization streakData={streakData} maxAbsence={routine.maxAbsence} />
+            <StreakVisualization streakData={streakData} maxAbsence={ended ? undefined : routine.maxAbsence} />
           </div>
         </div>
       </div>
@@ -415,18 +423,17 @@ export function RoutineDetailPanel({
         <label className="text-sm font-medium text-foreground">End date</label>
         <div className="space-y-2 relative">
           {routine.endDate ? (
-            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
+            <button onClick={() => onUpdate(routine.id, { endDate: null })} className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50 w-full">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-foreground">Until {new Date(routine.endDate).toLocaleDateString()}</span>
               </div>
-              <button
-                onClick={() => onUpdate(routine.id, { endDate: null })}
+              <div
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 ✕
-              </button>
-            </div>
+              </div>
+            </button>
           ) : (
             <Button variant="outline" size="sm" onClick={() => setShowEndDatePicker(true)} className="h-8">
               Set end date
@@ -498,14 +505,14 @@ export function RoutineDetailPanel({
           />
           {routine.maxAbsence && (
             <div
-              className={`text-sm ${isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+              className={`text-sm ${ended ? "text-muted-foreground" : isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
             >
               Max absence: {routine.maxAbsence} {unitLabel} {isMaxAbsenceExceeded && "(EXCEEDED)"}
             </div>
           )}
           {currentAbsenceUnits > 0 && (
             <div
-              className={`text-sm ${isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+              className={`text-sm ${ended ? "text-muted-foreground" : isMaxAbsenceExceeded ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
             >
               Current absence: {currentAbsenceUnits} {unitLabel}
             </div>
@@ -515,7 +522,7 @@ export function RoutineDetailPanel({
       </div>
 
       {/* Actions (bottom) */}
-      <div className="space-y-3">
+      <div className="space-y-3 hidden">
         <label className="text-sm font-medium text-foreground">Actions</label>
         <div className="flex items-center gap-2">
           <Button

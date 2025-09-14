@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Calendar, Clock, MessageSquare, Upload, Send, Star, X } from "lucide-react"
+import { Calendar, Clock, MessageSquare, Upload, Send, Star, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { DetailPanelLayout } from "@/components/ui/detail-panel-layout"
 import { ActionButton } from "@/components/ui/action-button"
 import { CircularCheckbox } from "@/components/ui/circular-checkbox"
@@ -119,7 +119,6 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
   const handleRemoveDueDate = () => {
     onUpdate(todo.id, { dueDate: null })
     setSelectedDueDate(null)
-    toast({ title: "Due date removed" })
   }
 
   const handleToggleStar = () => {
@@ -302,15 +301,14 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
 
       <div className="space-y-3">
         {isAddedToToday ? (
-          <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
+          <button onClick={handleAddToToday} className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50 w-full">
             <span className="text-sm text-foreground">Added to Today</span>
-            <button
-              onClick={handleAddToToday}
+            <div
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="h-4 w-4" />
-            </button>
-          </div>
+            </div>
+          </button>
         ) : (
           <ActionButton icon={<Calendar className="h-4 w-4" />} onClick={handleAddToToday}>
             Add to Today
@@ -319,18 +317,17 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
 
         <div className="space-y-2">
           {selectedDueDate ? (
-            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50">
+            <button onClick={handleRemoveDueDate} className="flex items-center justify-between p-2 bg-muted/50 rounded-md border border-border/50 w-full">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-foreground">Due {selectedDueDate.toLocaleDateString()}</span>
               </div>
-              <button
-                onClick={handleRemoveDueDate}
+              <div
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
-              </button>
-            </div>
+              </div>
+            </button>
           ) : (
             <ActionButton icon={<Clock className="h-4 w-4" />} onClick={handleAddDueDate}>
               Add due date
@@ -342,13 +339,13 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
               {/* Calendar Header */}
               <div className="flex items-center justify-between">
                 <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")}>
-                  {/* ChevronLeft icon here */}
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <h4 className="font-medium">
                   {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                 </h4>
                 <Button variant="ghost" size="sm" onClick={() => navigateMonth("next")}>
-                  {/* ChevronRight icon here */}
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
 

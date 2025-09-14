@@ -59,38 +59,38 @@ export function TodoSidebar({
           className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
           onClick={handleAccountClick}
         >
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-foreground text-background font-medium text-sm">
+          <Avatar className="h-10 w-10 md:h-8 md:w-8">
+            <AvatarFallback className="bg-foreground text-background font-medium text-base md:text-sm">
               {(user?.displayName || user?.email || "U").slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sidebar-foreground truncate text-sm">{user?.displayName || (user?.isAnonymous ? "Guest" : "User")}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.isAnonymous ? "Guest" : user?.email || "Signed in"}</p>
+            <p className="font-medium text-sidebar-foreground truncate text-base md:text-sm">{user?.displayName || (user?.isAnonymous ? "Guest" : "User")}</p>
+            <p className="text-sm md:text-xs text-muted-foreground truncate">{user?.isAnonymous ? "Guest" : user?.email || "Signed in"}</p>
           </div>
         </div>
       </div>
 
       {/* Theme Toggle */}
       <div className="px-4 py-3 border-b border-sidebar-border/70">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 md:gap-1">
           {mounted && (
             <>
               <Button
                 variant={theme === "light" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => handleThemeChange("light")}
-                className="flex-1 h-8"
+                className="flex-1 h-10 md:h-8"
               >
-                <Sun className="h-3 w-3" />
+                <Sun className="h-5 w-5 md:h-3 md:w-3" />
               </Button>
               <Button
                 variant={theme === "dark" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => handleThemeChange("dark")}
-                className="flex-1 h-8"
+                className="flex-1 h-10 md:h-8"
               >
-                <Moon className="h-3 w-3" />
+                <Moon className="h-5 w-5 md:h-3 md:w-3" />
               </Button>
             </>
           )}
@@ -99,20 +99,20 @@ export function TodoSidebar({
 
       {/* Default Lists */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-4 space-y-1">
+        <div className="p-4 space-y-2 md:space-y-1">
           {defaultLists.map((list) => {
             const Icon = list.icon
             return (
               <Button
                 key={list.id}
                 variant={activeList === list.id ? "secondary" : "ghost"}
-                className="w-full justify-start gap-2 h-8 text-sm hover:bg-muted/30"
+                className="w-full justify-start gap-3 md:gap-2 h-12 md:h-8 text-base md:text-sm hover:bg-muted/30"
                 onClick={() => setActiveList(list.id)}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-5 w-5 md:h-4 md:w-4" />
                 <span className="flex-1 text-left">{list.name}</span>
                 {list.count > 0 && (
-                  <Badge variant="secondary" className="ml-auto text-xs">
+                  <Badge variant="secondary" className="ml-auto text-sm md:text-xs">
                     {list.count}
                   </Badge>
                 )}
@@ -122,10 +122,10 @@ export function TodoSidebar({
 
           <Button
             variant={activeList === "reliability" ? "secondary" : "ghost"}
-            className="w-full justify-start gap-2 h-8 text-sm hover:bg-muted/30 hidden"
+            className="w-full justify-start gap-3 md:gap-2 h-12 md:h-8 text-base md:text-sm hover:bg-muted/30 hidden"
             onClick={() => setActiveList("reliability")}
           >
-            <TrendingUp className="h-4 w-4" />
+            <TrendingUp className="h-5 w-5 md:h-4 md:w-4" />
             <span className="flex-1 text-left">Score</span>
           </Button>
         </div>

@@ -38,10 +38,20 @@ export function CircularCheckbox({
 
   return (
     <div
+      className={`h-5.5 w-5.5 mt-[-1.5px] md:mt-[-1px] md:h-5 md:w-5 rounded-full border-[1.5px] ${borderColor} cursor-pointer flex items-center justify-center transition-colors ${bgColor} ${className}`}
+      onClick={onClick}
+    >
+      {checked && <Check className={`h-3.5 w-3.5 md:h-3 md:w-3 text-background`} />}
+    </div>
+  );
+    /*
+  return (
+    <div
       className={`${sizeClasses[size]} rounded-full border-[1.5px] ${borderColor} cursor-pointer flex items-center justify-center transition-colors ${bgColor} ${className}`}
       onClick={onClick}
     >
       {checked && <Check className={`${iconSizes[size]} text-background`} />}
     </div>
   )
+    */
 }

@@ -50,7 +50,13 @@ export function getTodoCounts(todos: Todo[], routines: Routine[]) {
   }
 
   const todayTodosOpen = todos.filter((t) => !t.completed && (isDueToday(t.dueDate) || t.todayAddedOn === todayStr)).length
-  const openRoutinesCount = routines.filter((r) => !r.stopped && !r.paused && !r.completedDates.includes(todayStr)).length
+  const isPastEnd = (r: Routine) => {
+    if (!r.endDate) return false
+    const end = new Date(r.endDate)
+    const endOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+    return todayOnly.getTime() > endOnly
+  }
+  const openRoutinesCount = routines.filter((r) => !r.stopped && !r.paused && !isPastEnd(r) && !r.completedDates.includes(todayStr)).length
 
   const plannedTodosOpen = todos.filter((t) => !t.completed && !!t.dueDate).length
   const allOpenTodos = todos.filter((t) => !t.completed).length
