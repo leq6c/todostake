@@ -1,5 +1,7 @@
 "use client"
 
+import { Capacitor } from "@capacitor/core"
+import { Preferences } from "@capacitor/preferences"
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 
@@ -13,15 +15,24 @@ type ThemeProviderContextType = {
 const ThemeProviderContext = createContext<ThemeProviderContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark")
+  const [theme, setTheme] = useState<Theme>("light")
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     // Load theme from localStorage or default to dark
-    const savedTheme = localStorage.getItem("theme") as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
+    if (Capacitor.isNativePlatform()) {
+      (async () => {
+        const savedTheme = await Preferences.get({ key: "theme" })
+        if (savedTheme) {
+          setTheme(savedTheme.value as Theme)
+        }
+      })();
+    } else {
+      const savedTheme = localStorage.getItem("theme") as Theme
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
     }
   }, [])
 
@@ -31,7 +42,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.remove("light", "dark")
       document.documentElement.classList.add(theme)
       // Save to localStorage
-      localStorage.setItem("theme", theme)
+      if (Capacitor.isNativePlatform()) {
+        (async () => {
+          await Preferences.set({ key: "theme", value: theme })
+        })();
+      } else {
+        localStorage.setItem("theme", theme)
+      }
     }
   }, [theme, mounted])
 
