@@ -7,7 +7,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "ios": "npm run build && npx cap sync"
+    "ios": "NEXT_APP_MODE=native npm run build && npx cap sync"
   },
   "dependencies": {
     "@capacitor-firebase/app": "^7.3.1",
