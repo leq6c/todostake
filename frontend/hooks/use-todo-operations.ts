@@ -61,18 +61,24 @@ export function useTodoOperations() {
   const fromFirestoreTodo = useCallback((id: string, data: any): Todo => {
     // createdAt may be Firestore Timestamp, JS Date, ISO string, or missing
     let createdAt: Date;
-    if (data?.createdAt instanceof Timestamp) createdAt = data.createdAt.toDate();
-    else if (data?.createdAt instanceof Date) createdAt = data.createdAt as Date;
-    else if (typeof data?.createdAt === "string") createdAt = new Date(data.createdAt);
-    else if (typeof data?.createdAt === "number") createdAt = new Date(data.createdAt);
+    if (data?.createdAt instanceof Timestamp)
+      createdAt = data.createdAt.toDate();
+    else if (data?.createdAt instanceof Date)
+      createdAt = data.createdAt as Date;
+    else if (typeof data?.createdAt === "string")
+      createdAt = new Date(data.createdAt);
+    else if (typeof data?.createdAt === "number")
+      createdAt = new Date(data.createdAt);
     else createdAt = new Date();
 
     // dueDate normalization (Timestamp | Date | string | number | null)
     let dueDate: Date | undefined;
     if (data?.dueDate instanceof Timestamp) dueDate = data.dueDate.toDate();
     else if (data?.dueDate instanceof Date) dueDate = data.dueDate as Date;
-    else if (typeof data?.dueDate === "string") dueDate = new Date(data.dueDate);
-    else if (typeof data?.dueDate === "number") dueDate = new Date(data.dueDate);
+    else if (typeof data?.dueDate === "string")
+      dueDate = new Date(data.dueDate);
+    else if (typeof data?.dueDate === "number")
+      dueDate = new Date(data.dueDate);
     else dueDate = undefined;
 
     return {
@@ -252,7 +258,7 @@ export function useTodoOperations() {
       } else {
         await addDoc(userTodosCol, payload as any);
       }
-      toast({ title: "Task added" });
+      //toast({ title: "Task added" });
     },
     [user, userTodosCol]
   );
