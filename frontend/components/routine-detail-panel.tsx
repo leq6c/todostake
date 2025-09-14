@@ -36,6 +36,7 @@ interface RoutineDetailPanelProps {
   onStop: (id: string) => void
   onPause: (id: string) => void
   type: "daily" | "weekly" | "monthly"
+  animated?: boolean
 }
 
 export function RoutineDetailPanel({
@@ -47,6 +48,7 @@ export function RoutineDetailPanel({
   onStop,
   onPause,
   type,
+  animated = true,
 }: RoutineDetailPanelProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(routine?.name || "")
@@ -72,7 +74,7 @@ export function RoutineDetailPanel({
 
   if (!routine) {
     return (
-      <DetailPanelLayout onClose={onClose}>
+      <DetailPanelLayout onClose={onClose} animated={animated}>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground text-sm">No routine selected</p>
         </div>
@@ -331,6 +333,7 @@ export function RoutineDetailPanel({
   return (
     <DetailPanelLayout
       onClose={onClose}
+      animated={animated}
       onDelete={() => handleDeleteClick()}
       footerContent={`Created ${new Date(routine.createdAt ?? new Date()).toLocaleDateString()}`}
     >

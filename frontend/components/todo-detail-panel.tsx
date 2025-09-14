@@ -31,9 +31,10 @@ interface TodoDetailPanelProps {
   onUpdate: (id: string, updates: Partial<Todo>) => void
   onDelete: (id: string) => void
   onToggle: (id: string) => void
+  animated?: boolean
 }
 
-export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }: TodoDetailPanelProps) {
+export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle, animated = true }: TodoDetailPanelProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(todo?.text || "")
   const [memo, setMemo] = useState(todo?.memo || "")
@@ -78,7 +79,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
 
   if (!todo) {
     return (
-      <DetailPanelLayout onClose={onClose}>
+      <DetailPanelLayout onClose={onClose} animated={animated}>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground text-sm">No item selected</p>
         </div>
@@ -243,6 +244,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle }:
   return (
     <DetailPanelLayout
       onClose={onClose}
+      animated={animated}
       onDelete={() => handleDeleteClick()}
       footerContent={`Created ${todo.createdAt?.toLocaleDateString ? todo.createdAt.toLocaleDateString() : "unknown"}`}
     >
