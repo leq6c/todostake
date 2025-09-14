@@ -20,7 +20,6 @@ import {
   deleteDoc,
   where,
   serverTimestamp,
-  Timestamp,
   writeBatch,
 } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
@@ -59,27 +58,22 @@ export function useTodoOperations() {
   );
 
   const fromFirestoreTodo = useCallback((id: string, data: any): Todo => {
-    // createdAt may be Firestore Timestamp, JS Date, ISO string, or missing
-    let createdAt: Date;
-    if (data?.createdAt instanceof Timestamp)
-      createdAt = data.createdAt.toDate();
-    else if (data?.createdAt instanceof Date)
-      createdAt = data.createdAt as Date;
-    else if (typeof data?.createdAt === "string")
-      createdAt = new Date(data.createdAt);
-    else if (typeof data?.createdAt === "number")
-      createdAt = new Date(data.createdAt);
-    else createdAt = new Date();
+    // Normalize createdAt and dueDate to epoch ms (number)
+    const toMillis = (d: any): number | undefined => {
+      if (d == null) return undefined
+      if (typeof d === "number") return d
+      if (d instanceof Date) return d.getTime()
+      if (typeof d === "string") {
+        const t = Date.parse(d)
+        return Number.isNaN(t) ? undefined : t
+      }
+      if (d && typeof d.toMillis === "function") return d.toMillis()
+      if (d && typeof d.toDate === "function") return (d.toDate() as Date).getTime()
+      return undefined
+    }
 
-    // dueDate normalization (Timestamp | Date | string | number | null)
-    let dueDate: Date | undefined;
-    if (data?.dueDate instanceof Timestamp) dueDate = data.dueDate.toDate();
-    else if (data?.dueDate instanceof Date) dueDate = data.dueDate as Date;
-    else if (typeof data?.dueDate === "string")
-      dueDate = new Date(data.dueDate);
-    else if (typeof data?.dueDate === "number")
-      dueDate = new Date(data.dueDate);
-    else dueDate = undefined;
+    const createdAt = toMillis(data?.createdAt) ?? Date.now()
+    const dueDate = toMillis(data?.dueDate)
 
     return {
       id,
@@ -87,7 +81,7 @@ export function useTodoOperations() {
       completed: !!data?.completed,
       createdAt,
       list: data?.list || "tasks",
-      dueDate,
+      dueDate: typeof dueDate === "number" ? dueDate : undefined,
       starred: !!data?.starred,
       stakeAmount: data?.stakeAmount ?? undefined,
       stakeCurrency: data?.stakeCurrency ?? undefined,
@@ -230,7 +224,7 @@ export function useTodoOperations() {
       const payload: any = {
         text,
         completed: false,
-        createdAt: serverTimestamp(),
+        createdAt: Date.now(),
         list: activeList,
         starred: false,
       };
@@ -242,13 +236,13 @@ export function useTodoOperations() {
         payload.proverInstructions = proverInstructions.trim();
       }
       if (dueDate instanceof Date) {
-        payload.dueDate = dueDate;
+        payload.dueDate = dueDate.getTime();
       }
       // Behavior based on current view
       if (activeList === "today") {
         payload.todayAddedOn = todayStr;
       } else if (activeList === "planned") {
-        payload.dueDate = todayOnly;
+        payload.dueDate = todayOnly.getTime();
       }
       if (Capacitor.isNativePlatform()) {
         await FirebaseFirestore.addDocument({
@@ -310,25 +304,20 @@ export function useTodoOperations() {
   const updateTodo = useCallback(
     async (id: string, updates: Partial<Todo>) => {
       if (!user || !userTodosCol) return;
+      const toEpoch = (v: any): number | null | undefined =>
+        v === null ? null : v === undefined ? undefined : v instanceof Date ? v.getTime() : typeof v === "number" ? v : undefined
+
       const toUpdateWeb: Record<string, any> = { ...updates };
-      if (updates.dueDate instanceof Date || updates.dueDate === null) {
-        toUpdateWeb.dueDate = updates.dueDate
-          ? Timestamp.fromDate(updates.dueDate)
-          : null;
+      if ("dueDate" in updates) {
+        toUpdateWeb.dueDate = toEpoch(updates.dueDate);
       }
-      if (updates.createdAt instanceof Date) {
-        toUpdateWeb.createdAt = Timestamp.fromDate(updates.createdAt);
+      if ("createdAt" in updates) {
+        toUpdateWeb.createdAt = toEpoch(updates.createdAt);
       }
 
       if (Capacitor.isNativePlatform()) {
         // For native plugin, prefer plain values
-        const toUpdateNative: Record<string, any> = { ...updates };
-        if (updates.dueDate instanceof Date || updates.dueDate === null) {
-          toUpdateNative.dueDate = updates.dueDate ?? null;
-        }
-        if (updates.createdAt instanceof Date) {
-          toUpdateNative.createdAt = updates.createdAt;
-        }
+        const toUpdateNative: Record<string, any> = { ...toUpdateWeb };
         await FirebaseFirestore.updateDocument({
           reference: `${userTodosCol.path}/${id}`,
           data: toUpdateNative,

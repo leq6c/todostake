@@ -180,7 +180,7 @@ export function useReliabilityScore() {
                 score: newScore,
                 change,
                 reason,
-                createdAt: new Date(),
+                createdAt: Date.now(),
               },
             },
           ],
@@ -199,7 +199,7 @@ export function useReliabilityScore() {
           score: newScore,
           change,
           reason,
-          createdAt: serverTimestamp(),
+          createdAt: Date.now(),
         })
       })
     },

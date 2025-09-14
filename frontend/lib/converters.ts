@@ -1,11 +1,19 @@
 import type { FirestoreDataConverter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore"
-import { Timestamp } from "firebase/firestore"
 import type { Todo, TodoList, Routine } from "@/types"
 
-const toTs = (d?: Date | null | unknown) => {
-  if (!d) return undefined
-  if (d instanceof Date) return Timestamp.fromDate(d)
-  return d as DocumentData // allow FieldValue like serverTimestamp
+// Convert various Firestore/JS date-like inputs to epoch ms number
+const toMillis = (d: any): number | undefined => {
+  if (d == null) return undefined
+  if (typeof d === "number") return d
+  if (d instanceof Date) return d.getTime()
+  if (typeof d === "string") {
+    const t = Date.parse(d)
+    return Number.isNaN(t) ? undefined : t
+  }
+  // Firestore Timestamp-like (duck typing for toMillis/toDate)
+  if (d && typeof d.toMillis === "function") return d.toMillis()
+  if (d && typeof d.toDate === "function") return (d.toDate() as Date).getTime()
+  return undefined
 }
 
 export const todoConverter: FirestoreDataConverter<Todo> = {
@@ -13,9 +21,10 @@ export const todoConverter: FirestoreDataConverter<Todo> = {
     return {
       text: todo.text,
       completed: !!todo.completed,
-      createdAt: toTs(todo.createdAt) ?? Timestamp.fromDate(new Date()),
+      // store as epoch ms
+      createdAt: typeof todo.createdAt === "number" ? todo.createdAt : Date.now(),
       list: todo.list,
-      dueDate: toTs(todo.dueDate) ?? null,
+      dueDate: typeof todo.dueDate === "number" ? todo.dueDate : null,
       starred: !!todo.starred,
       stakeAmount: todo.stakeAmount ?? null,
       stakeCurrency: todo.stakeCurrency ?? null,
@@ -26,15 +35,15 @@ export const todoConverter: FirestoreDataConverter<Todo> = {
   },
   fromFirestore(snapshot: QueryDocumentSnapshot): Todo {
     const data = snapshot.data()
-    const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date()
-    const dueDate = data.dueDate instanceof Timestamp ? data.dueDate.toDate() : undefined
+    const createdAt = toMillis(data.createdAt) ?? Date.now()
+    const dueDate = toMillis(data.dueDate)
     return {
       id: snapshot.id,
       text: data.text,
       completed: !!data.completed,
       createdAt,
       list: data.list || "tasks",
-      dueDate,
+      dueDate: typeof dueDate === "number" ? dueDate : undefined,
       starred: !!data.starred,
       stakeAmount: data.stakeAmount ?? undefined,
       stakeCurrency: data.stakeCurrency ?? undefined,
@@ -60,7 +69,7 @@ export const routineConverter: FirestoreDataConverter<Routine> = {
     return {
       name: r.name,
       type: r.type,
-      createdAt: toTs((r as any).createdAt) ?? Timestamp.fromDate(new Date()),
+      createdAt: typeof (r as any).createdAt === "number" ? (r as any).createdAt : Date.now(),
       description: (r as any).description ?? null,
       memo: (r as any).memo ?? null,
       streak: r.streak ?? 0,
@@ -69,7 +78,7 @@ export const routineConverter: FirestoreDataConverter<Routine> = {
       stakeAmount: r.stakeAmount ?? null,
       stakeCurrency: r.stakeCurrency ?? null,
       maxAbsence: r.maxAbsence ?? null,
-      endDate: toTs((r as any).endDate) ?? null,
+      endDate: typeof (r as any).endDate === "number" ? (r as any).endDate : null,
       stopped: !!r.stopped,
       paused: !!r.paused,
       proverInstructions: r.proverInstructions ?? null,
@@ -82,7 +91,7 @@ export const routineConverter: FirestoreDataConverter<Routine> = {
       id: snapshot.id,
       name: data.name,
       type: data.type,
-      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
+      createdAt: toMillis(data.createdAt) ?? Date.now(),
       description: data.description ?? undefined,
       memo: data.memo ?? undefined,
       streak: data.streak ?? 0,
@@ -91,7 +100,10 @@ export const routineConverter: FirestoreDataConverter<Routine> = {
       stakeAmount: data.stakeAmount ?? undefined,
       stakeCurrency: data.stakeCurrency ?? undefined,
       maxAbsence: data.maxAbsence ?? undefined,
-      endDate: data.endDate instanceof Timestamp ? data.endDate.toDate() : undefined,
+      endDate: (() => {
+        const v = toMillis(data.endDate)
+        return typeof v === "number" ? v : undefined
+      })(),
       stopped: !!data.stopped,
       paused: !!data.paused,
       proverInstructions: data.proverInstructions ?? undefined,

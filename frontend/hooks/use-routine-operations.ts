@@ -67,11 +67,23 @@ export function useRoutineOperations() {
           const next: Routine[] = [];
           for (const s of event?.snapshots ?? []) {
             const d = s.data as any;
+            const toMillis = (v: any): number | undefined => {
+              if (v == null) return undefined
+              if (typeof v === "number") return v
+              if (v instanceof Date) return v.getTime()
+              if (typeof v === "string") {
+                const t = Date.parse(v)
+                return Number.isNaN(t) ? undefined : t
+              }
+              if (v && typeof v.toMillis === "function") return v.toMillis()
+              if (v && typeof v.toDate === "function") return (v.toDate() as Date).getTime()
+              return undefined
+            }
             next.push({
               id: s.id,
               name: d.name,
               type: d.type,
-              createdAt: d.createdAt ?? new Date(),
+              createdAt: toMillis(d.createdAt) ?? Date.now(),
               description: d.description ?? undefined,
               memo: d.memo ?? undefined,
               streak: d.streak ?? 0,
@@ -82,7 +94,7 @@ export function useRoutineOperations() {
               stakeAmount: d.stakeAmount ?? undefined,
               stakeCurrency: d.stakeCurrency ?? undefined,
               maxAbsence: d.maxAbsence ?? undefined,
-              endDate: d.endDate ?? undefined,
+              endDate: toMillis(d.endDate) ?? undefined,
               stopped: !!d.stopped,
               paused: !!d.paused,
               proverInstructions: d.proverInstructions ?? undefined,
@@ -132,7 +144,7 @@ export function useRoutineOperations() {
         id,
         name,
         type,
-        createdAt: new Date(),
+        createdAt: Date.now(),
         streak: 0,
         maxStreak: 0,
         completedDates: [],
@@ -140,7 +152,7 @@ export function useRoutineOperations() {
         stakeCurrency: stakeCurrency ?? undefined,
         maxAbsence: maxAbsence ?? undefined,
         proverInstructions: proverInstructions ?? undefined,
-        endDate: endDate ?? undefined,
+        endDate: endDate ? endDate.getTime() : undefined,
         starred: false,
       };
       if (Capacitor.isNativePlatform()) {

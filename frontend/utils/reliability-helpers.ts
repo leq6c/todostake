@@ -2,7 +2,7 @@ import type { Todo, Routine } from "@/types"
 
 export const getTaskCompletionContext = (todo: Todo) => {
   const hasStake = !!(todo.stakeAmount && todo.stakeAmount > 0)
-  const isOverdue = !!(todo.dueDate && new Date() > todo.dueDate)
+  const isOverdue = !!(todo.dueDate && Date.now() > todo.dueDate)
 
   return {
     hasStake,

@@ -54,7 +54,9 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle, a
     const todayStr = new Date(t.getFullYear(), t.getMonth(), t.getDate()).toISOString().split("T")[0]
     return added === todayStr
   })
-  const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(todo?.dueDate || null)
+  const [selectedDueDate, setSelectedDueDate] = useState<Date | null>(
+    todo?.dueDate ? new Date(todo.dueDate) : null,
+  )
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteModalPosition, setDeleteModalPosition] = useState({ x: 0, y: 0 })
   const {profile} = useProfile()
@@ -65,7 +67,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle, a
     setMemo(todo?.memo || "")
     setProverInstructions(todo?.proverInstructions || "")
     setIsStarred(!!todo?.starred)
-    const d = todo?.dueDate || null
+    const d = todo?.dueDate ? new Date(todo.dueDate) : null
     setSelectedDueDate(d)
     const added = todo?.todayAddedOn
     if (added) {
@@ -112,7 +114,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle, a
   }
 
   const handleDateSelect = (date: Date) => {
-    onUpdate(todo.id, { dueDate: date })
+    onUpdate(todo.id, { dueDate: date.getTime() })
     setSelectedDueDate(date)
     setShowDatePicker(false)
   }
@@ -246,7 +248,7 @@ export function TodoDetailPanel({ todo, onClose, onUpdate, onDelete, onToggle, a
       onClose={onClose}
       animated={animated}
       onDelete={() => handleDeleteClick()}
-      footerContent={`Created ${todo.createdAt?.toLocaleDateString ? todo.createdAt.toLocaleDateString() : "unknown"}`}
+      footerContent={`Created ${new Date(todo.createdAt).toLocaleDateString()}`}
     >
       <div className="flex items-center gap-3">
         <CircularCheckbox checked={todo.completed} onClick={() => onToggle(todo.id)} />

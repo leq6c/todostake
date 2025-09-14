@@ -2,11 +2,11 @@ export interface Todo {
   id: string
   text: string
   completed: boolean
-  createdAt: Date
+  createdAt: number
   list: string
   stakeAmount?: number
   stakeCurrency?: string // Added stakeCurrency property for currency selection
-  dueDate?: Date | null
+  dueDate?: number | null
   starred?: boolean // Added starred property for star functionality
   memo?: string
   proverInstructions?: string
@@ -23,7 +23,7 @@ export interface Routine {
   id: string
   name: string
   type: "daily" | "weekly" | "monthly"
-  createdAt?: Date
+  createdAt?: number
   description?: string
   memo?: string
   streak: number
@@ -32,7 +32,7 @@ export interface Routine {
   stakeAmount?: number
   stakeCurrency?: string // Added stakeCurrency property for currency selection
   maxAbsence?: number
-  endDate?: Date | null
+  endDate?: number | null
   stopped?: boolean
   paused?: boolean
   proverInstructions?: string

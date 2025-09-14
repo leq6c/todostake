@@ -255,8 +255,8 @@ export function RoutineDetailPanel({
       nodes.push(
         <button
           key={day}
-          onClick={() => {
-            onUpdate(routine.id, { endDate: date })
+            onClick={() => {
+            onUpdate(routine.id, { endDate: date.getTime() })
             setShowEndDatePicker(false)
           }}
           className={`h-8 w-8 text-sm rounded-full hover:bg-muted transition-colors ${
@@ -335,7 +335,7 @@ export function RoutineDetailPanel({
       onClose={onClose}
       animated={animated}
       onDelete={() => handleDeleteClick()}
-      footerContent={`Created ${new Date(routine.createdAt ?? new Date()).toLocaleDateString()}`}
+      footerContent={`Created ${new Date(routine.createdAt ?? Date.now()).toLocaleDateString()}`}
     >
       <div className="flex items-center gap-3">
         <CircularCheckbox

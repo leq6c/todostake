@@ -42,7 +42,7 @@ export function getTodoCounts(todos: Todo[], routines: Routine[]) {
   const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const todayStr = todayOnly.toISOString().split("T")[0]
 
-  const isDueToday = (d?: Date | null) => {
+  const isDueToday = (d?: number | null) => {
     if (!d) return false
     const due = new Date(d)
     const dueOnly = new Date(due.getFullYear(), due.getMonth(), due.getDate())
