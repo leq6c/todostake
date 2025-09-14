@@ -220,55 +220,57 @@ export function CombinedMain({
     )
   }
 
-  const TodoItem = ({ todo, isCompleted = false }: { todo: Todo; isCompleted?: boolean }) => (
-    <div data-role="todo-item"
-      className={`px-3 ${isCompleted ? "opacity-70" : ""} rounded-lg w-full cursor-pointer transition-colors ${
-        selectedTodoId === todo.id ? "bg-accent/50 hover:bg-card-foreground/8" : "hover:bg-card-foreground/8"
-      }`}
-      onClick={() => onSelectTodo(todo)}
-    >
-      <div className="flex items-center gap-2 py-2 relative">
-        <div className="mt-[1px] h-9.5">
-          <CircularCheckbox
-            checked={todo.completed}
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleTodo(todo.id)
-            }}
-          />
-        </div>
-        <div className="flex-1 flex flex-col">
-          <span className={`text-foreground text-sm font-medium ${isCompleted ? "line-through" : ""}`}>
-            {todo.text}
-            {todo.stakeAmount && todo.stakeAmount > 0 && (
-              <StakeBadge amount={todo.stakeAmount} className={isCompleted ? "opacity-60" : ""} variant={"success"} />
-            )}
-          </span>
-          {/*"calendar icon"*/}
-          <div className="flex items-center mt-1">
-            <div className="text-xs text-muted-foreground mr-1">
-              <CalendarIcon strokeWidth={1.5} className="h-3.5 w-3.5" />
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : activeList === "today" ? "Today" : activeList === "planned" ? "Planned" : "Task"}
+  const TodoItem = ({ todo, isCompleted = false }: { todo: Todo; isCompleted?: boolean }) => {
+    return (
+      <div data-role="todo-item"
+        className={`px-3 ${isCompleted ? "opacity-70" : ""} rounded-lg w-full cursor-pointer transition-colors ${
+          selectedTodoId === todo.id ? "bg-accent/50 hover:bg-card-foreground/8" : "hover:bg-card-foreground/8"
+        }`}
+        onClick={() => onSelectTodo(todo)}
+      >
+        <div className="flex items-center gap-2 py-2 relative">
+          <div className="mt-[1px] h-9.5">
+            <CircularCheckbox
+              checked={todo.completed}
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleTodo(todo.id)
+              }}
+            />
+          </div>
+          <div className="flex-1 flex flex-col">
+            <span className={`text-foreground text-sm font-medium ${isCompleted ? "line-through" : ""}`}>
+              {todo.text}
+              {todo.stakeAmount && todo.stakeAmount > 0 && (
+                <StakeBadge amount={todo.stakeAmount} className={isCompleted ? "opacity-60" : ""} variant={"success"} />
+              )}
+            </span>
+            {/*"calendar icon"*/}
+            <div className="flex items-center mt-1">
+              <div className="text-xs text-muted-foreground mr-1">
+                <CalendarIcon strokeWidth={1.5} className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : activeList === "today" ? "Today" : activeList === "planned" ? "Planned" : "Task"}
+              </div>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleStar(todo.id)
+            }}
+            className={`transition-colors ${todo.starred ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
+          >
+            <Star className={`h-4 w-4 ${todo.starred ? "fill-current" : ""}`} />
+          </Button>
+          {/*<div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>*/}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleStar(todo.id)
-          }}
-          className={`transition-colors ${todo.starred ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
-        >
-          <Star className={`h-4 w-4 ${todo.starred ? "fill-current" : ""}`} />
-        </Button>
-        {/*<div className="absolute bottom-0 left-6 right-0 h-[1px] bg-card-foreground/10"></div>*/}
       </div>
-    </div>
-  )
+    )
+  }
 
   const handleBackgroundClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement

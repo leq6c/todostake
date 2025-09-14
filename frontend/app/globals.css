@@ -194,6 +194,8 @@
   }
 }
 
+/* (reserved for future animations) */
+
 .pb-safe {
   padding-bottom: var(--safe-area-inset-bottom);
 }

@@ -433,7 +433,13 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
                 transition: isDraggingRightPanel ? "none" : "opacity 300ms ease-in-out",
               }}
               onClick={() => {
-                if (!uiState.isMobile || isClosingRightPanel) return
+                if (!uiState.isMobile || isClosingRightPanel) {
+                  if (!uiState.isMobile) {
+                    setIsClosingRightPanel(true)
+                    setRightDragX(RIGHT_PANEL_WIDTH)
+                  }
+                  return;
+                }
                 setIsClosingRightPanel(true)
                 setRightDragX(RIGHT_PANEL_WIDTH)
               }}
