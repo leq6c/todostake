@@ -16,17 +16,18 @@ import {
   type User,
   getAuth,
 } from "firebase/auth";
+import { Preferences } from "@capacitor/preferences";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const auth = getAuth();
 
   useEffect(() => {
     // Try to prime from last known user for offline reloads
     try {
-      const raw =
+      let raw =
         typeof window !== "undefined"
           ? localStorage.getItem("wb:lastUser")
           : null;
@@ -40,7 +41,21 @@ export function useAuth() {
       }
     } catch {}
 
-    FirebaseAuthentication.addListener("authStateChange", (state) => {
+    if (Capacitor.isNativePlatform()) {
+      (async () => {
+        const userRaw = (await Preferences.get({ key: "wb:lastUser" })).value;
+        if (userRaw) {
+          const user = JSON.parse(userRaw);
+          console.log("setUser[native]", user);
+          setUser(user as unknown as User);
+          setLoading(false);
+        }
+      })();
+    }
+
+    FirebaseAuthentication.addListener("authStateChange", async (state) => {
+      console.log("====onAuthSatteChange", state);
+      console.log("====onAuthSatteChangeUser", state.user);
       setUser(state.user as unknown as User);
       setLoading(false);
 
@@ -53,36 +68,61 @@ export function useAuth() {
             displayName: u.displayName,
             isAnonymous: u.isAnonymous,
           };
-          localStorage.setItem("wb:lastUser", JSON.stringify(payload));
+          if (Capacitor.isNativePlatform()) {
+            await Preferences.set({
+              key: "wb:lastUser",
+              value: JSON.stringify(payload),
+            });
+          } else {
+            localStorage.setItem("wb:lastUser", JSON.stringify(payload));
+          }
         } else {
-          localStorage.removeItem("wb:lastUser");
+          if (Capacitor.isNativePlatform()) {
+            await Preferences.remove({ key: "wb:lastUser" });
+          } else {
+            localStorage.removeItem("wb:lastUser");
+          }
         }
       } catch {}
     });
 
-    const unsub = auth.onAuthStateChanged((u) => {
-      setUser(u);
-      setLoading(false);
-      try {
-        if (u) {
-          const payload = {
-            uid: u.uid,
-            email: u.email,
-            displayName: u.displayName,
-            isAnonymous: u.isAnonymous,
-          };
-          localStorage.setItem("wb:lastUser", JSON.stringify(payload));
-        } else {
-          localStorage.removeItem("wb:lastUser");
-        }
-      } catch {}
-    });
-    return () => unsub();
+    if (!Capacitor.isNativePlatform()) {
+      const unsub = auth.onAuthStateChanged(async (u) => {
+        setUser(u);
+        setLoading(false);
+        try {
+          if (u) {
+            const payload = {
+              uid: u.uid,
+              email: u.email,
+              displayName: u.displayName,
+              isAnonymous: u.isAnonymous,
+            };
+            if (Capacitor.isNativePlatform()) {
+              await Preferences.set({
+                key: "wb:lastUser",
+                value: JSON.stringify(payload),
+              });
+            } else {
+              localStorage.setItem("wb:lastUser", JSON.stringify(payload));
+            }
+          } else {
+            if (Capacitor.isNativePlatform()) {
+              await Preferences.remove({ key: "wb:lastUser" });
+            } else {
+              localStorage.removeItem("wb:lastUser");
+            }
+          }
+        } catch {}
+      });
+      return () => unsub();
+    }
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
     // Use native Google Sign-In inside Capacitor apps to avoid popup/CORS issues
+    /*
     if (Capacitor.isNativePlatform()) {
       const result = await FirebaseAuthentication.signInWithGoogle();
       const idToken = result.credential?.idToken;
@@ -96,34 +136,68 @@ export function useAuth() {
       const credential = GoogleAuthProvider.credential(idToken, accessToken);
       await signInWithCredential(auth, credential);
       return;
-    }
+    }*/
 
-    // Web fallback
-    await signInWithPopup(auth, googleProvider);
+    if (Capacitor.isNativePlatform()) {
+      // Native fallback
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      console.log("====signInWithGoogle result", result);
+      console.log("====signInWithGoogle result user", result.user);
+      console.log(result);
+      if (result.user) {
+        setUser(result.user as unknown as User);
+      }
+    } else {
+      // Web fallback
+      await signInWithPopup(auth, googleProvider);
+    }
   }, []);
 
   const signInGuest = useCallback(async () => {
     setError(null);
-    //await signInAnonymously(auth);
-    const result = await FirebaseAuthentication.signInAnonymously();
-    if (result.user) {
-      setUser(result.user as unknown as User);
+    if (Capacitor.isNativePlatform()) {
+      const result = await FirebaseAuthentication.signInAnonymously();
+      if (result.user) {
+        setUser(result.user as unknown as User);
+      }
+    } else {
+      await signInAnonymously(auth);
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    await firebaseSignOut(auth);
     try {
-      localStorage.removeItem("wb:lastUser");
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseAuthentication.signOut();
+        await Preferences.remove({ key: "wb:lastUser" });
+      } else {
+        await firebaseSignOut(auth);
+        localStorage.removeItem("wb:lastUser");
+      }
     } catch {}
   }, []);
 
   const signUpWithEmail = useCallback(
     async (email: string, password: string, displayName?: string) => {
       setError(null);
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      if (displayName) {
-        await updateProfile(cred.user, { displayName });
+      if (Capacitor.isNativePlatform()) {
+        const cred =
+          await FirebaseAuthentication.createUserWithEmailAndPassword({
+            email,
+            password,
+          });
+        if (displayName) {
+          await updateProfile(cred.user as unknown as User, { displayName });
+        }
+      } else {
+        const cred = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        if (displayName) {
+          await updateProfile(cred.user, { displayName });
+        }
       }
     },
     []
@@ -132,14 +206,25 @@ export function useAuth() {
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
       setError(null);
-      await signInWithEmailAndPassword(auth, email, password);
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseAuthentication.signInWithEmailAndPassword({
+          email,
+          password,
+        });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
     },
     []
   );
 
   const resetPassword = useCallback(async (email: string) => {
     setError(null);
-    await sendPasswordResetEmail(auth, email);
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseAuthentication.sendPasswordResetEmail({ email });
+    } else {
+      await sendPasswordResetEmail(auth, email);
+    }
   }, []);
 
   return {

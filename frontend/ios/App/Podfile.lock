@@ -1169,6 +1169,8 @@ PODS:
     - FirebaseFirestore (~> 11.7.0)
   - CapacitorPluginSafeArea (4.0.0):
     - Capacitor
+  - CapacitorPreferences (7.0.2):
+    - Capacitor
   - FirebaseAppCheckInterop (11.15.0)
   - FirebaseAuth (11.7.0):
     - FirebaseAppCheckInterop (~> 11.0)
@@ -1336,6 +1338,7 @@ DEPENDENCIES:
   - "CapacitorFirebaseAuthentication (from `../../node_modules/@capacitor-firebase/authentication`)"
   - "CapacitorFirebaseFirestore (from `../../node_modules/@capacitor-firebase/firestore`)"
   - CapacitorPluginSafeArea (from `../../node_modules/capacitor-plugin-safe-area`)
+  - "CapacitorPreferences (from `../../node_modules/@capacitor/preferences`)"
 
 SPEC REPOS:
   trunk:
@@ -1371,6 +1374,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor-firebase/firestore"
   CapacitorPluginSafeArea:
     :path: "../../node_modules/capacitor-plugin-safe-area"
+  CapacitorPreferences:
+    :path: "../../node_modules/@capacitor/preferences"
 
 SPEC CHECKSUMS:
   abseil: d121da9ef7e2ff4cab7666e76c5a3e0915ae08c3
@@ -1381,6 +1386,7 @@ SPEC CHECKSUMS:
   CapacitorFirebaseAuthentication: d966e29421168f94621b8df9bc8ddf602b261fc7
   CapacitorFirebaseFirestore: a8803eb308a18876054a070d0f5fb01b2dc3471b
   CapacitorPluginSafeArea: 22031c3436269ca80fac90ec2c94bc7c1e59a81d
+  CapacitorPreferences: 65107ed7437d96ee72583df5763985e3c0ff2bc2
   FirebaseAppCheckInterop: 06fe5a3799278ae4667e6c432edd86b1030fa3df
   FirebaseAuth: 77e25aa24f3e1c626c5babd3338551fc1669ee0e
   FirebaseAuthInterop: 7087d7a4ee4bc4de019b2d0c240974ed5d89e2fd
@@ -1398,6 +1404,6 @@ SPEC CHECKSUMS:
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
 
-PODFILE CHECKSUM: 7dba957574035bf057cb4cfe738dd8ca0b2204dc
+PODFILE CHECKSUM: e1a4ca2262feb7023e70487be0fe14f953379fa0
 
 COCOAPODS: 1.16.2
