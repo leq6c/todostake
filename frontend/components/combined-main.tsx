@@ -131,9 +131,21 @@ export function CombinedMain({
 
   const generateStreakData = (routine: Routine): StreakData[] => {
     const data: StreakData[] = []
+
     const today = new Date()
+    today.setHours(0, 0, 0, 0);
+
     const daysToShow = routine.type === "daily" ? 30 : routine.type === "weekly" ? 12 : 6
     const start = routine.createdAt ? new Date(routine.createdAt) : new Date(today)
+    start.setHours(0, 0, 0, 0);
+
+    const formatDateYYYYMMDD = (date: Date) => {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+
+      return year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
+    };
 
     for (let i = daysToShow - 1; i >= 0; i--) {
       const date = new Date(today)
@@ -144,9 +156,12 @@ export function CombinedMain({
       } else {
         date.setMonth(date.getMonth() - i)
       }
+      date.setHours(0, 0, 0, 0);
+      // Do not include dates prior to routine creation
       if (date < start) continue
-      const dateString = date.toISOString().split("T")[0]
+      const dateString = formatDateYYYYMMDD(date);
       const isCompleted = routine.completedDates.includes(dateString)
+
       data.push({ date: dateString, completed: isCompleted })
     }
     return data

@@ -181,7 +181,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
             </Button>
             {!isSignUp && (
               <button
-                className="text-xs text-muted-foreground hover:underline text-left"
+                className="text-xs text-muted-foreground hover:underline text-left hidden"
                 onClick={async () => {
                   try {
                     if (email) {
@@ -196,6 +196,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
                 Forgot password?
               </button>
             )}
+            <div className="text-xs text-muted-foreground text-center">Or</div>
             <Button className="w-full" onClick={async () => {
               try {
                 await signInWithGoogle()
@@ -215,7 +216,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
               Continue as guest
             </Button>
             <button
-              className="text-xs text-muted-foreground hover:underline w-full text-center"
+              className="text-xs text-muted-foreground hover:underline w-full text-center hidden"
               onClick={() => setIsSignUp(!isSignUp)}
             >
               {isSignUp ? "Have an account? Sign in" : "New here? Create an account"}
@@ -396,7 +397,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           <div className="hidden md:block shrink-0" style={{ width: `${uiState.sidebarWidth}px` }} />
 
         <div
-          className={`flex-1 flex h-full ${
+          className={`flex-1 flex h-full pr-safe ${
             uiState.rightPanelOpen &&
             appState.activeList !== "home" &&
             (appState.selectedTodo || appState.selectedRoutineId)

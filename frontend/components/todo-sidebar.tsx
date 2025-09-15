@@ -68,7 +68,7 @@ export function TodoSidebar({
   ]
 
   return (
-    <div className="w-full bg-sidebar border-r border-sidebar-border/70 flex flex-col h-full">
+    <div className="w-full bg-sidebar border-r border-sidebar-border/70 flex flex-col h-full pl-safe">
       {/* User Profile */}
       <div className="p-4 border-b border-sidebar-border/70 mt-safe">
         <div

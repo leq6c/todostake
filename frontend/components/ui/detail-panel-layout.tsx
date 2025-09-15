@@ -22,7 +22,7 @@ export function DetailPanelLayout({
   animated = true,
 }: DetailPanelLayoutProps) {
   return (
-    <div className={`w-80 bg-card border-l border-border/70 flex flex-col h-full shadow-lg ${animated ? 'right-to-left-animate' : ''} ${className}`}>
+    <div className={`w-80 bg-card border-l border-border/70 flex flex-col h-full shadow-lg ${animated ? 'right-to-left-animate' : ''} ${className} pr-safe`}>
       {/* Content */}
       <div className="flex-1 p-4 space-y-6 overflow-y-auto overflow-x-hidden">
         <div className="mt-safe"></div>

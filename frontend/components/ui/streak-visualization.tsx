@@ -8,17 +8,23 @@ interface StreakVisualizationProps {
 
 export function StreakVisualization({ streakData, maxAbsence, className = "" }: StreakVisualizationProps) {
   const getSquareColor = (data: StreakData, index: number) => {
-    if (maxAbsence) {
-      const recentMissed = streakData
-        .slice(Math.max(0, index - maxAbsence + 1), index + 1)
-        .filter((d) => !d.completed).length
+    // Completed days are always green
+    if (data.completed) return "bg-green-500 dark:bg-green-600"
 
-      if (recentMissed >= maxAbsence) {
-        return data.completed ? "bg-red-500 dark:bg-red-500" : "bg-red-400 dark:bg-red-700"
+    // For missed days, optionally escalate color when absence exceeds threshold
+    if (typeof maxAbsence === "number" && maxAbsence > 0) {
+      // Count consecutive misses ending at this index
+      let consecutiveMisses = 0
+      for (let i = index; i >= 0; i--) {
+        if (streakData[i].completed) break
+        consecutiveMisses++
+        if (consecutiveMisses >= maxAbsence) break
       }
+      if (consecutiveMisses >= maxAbsence) return "bg-red-500 dark:bg-red-700"
     }
 
-    return data.completed ? "bg-green-500 dark:bg-green-600" : "bg-gray-300 dark:bg-gray-600"
+    // Default missed day color
+    return "bg-gray-300 dark:bg-gray-600"
   }
 
   return (
