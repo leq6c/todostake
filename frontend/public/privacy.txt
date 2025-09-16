@@ -1,0 +1,203 @@
+# Privacy Policy (TodoHabit)
+
+Last Updated: 2025/09/16
+Operator: Cinnon Inc. (hereinafter referred to as “the Company”)
+Service: TodoHabit (hereinafter referred to as “the Service”)
+URL: [https://todohabit.app](https://todohabit.app)
+
+This Privacy Policy (hereinafter referred to as “the Policy”) describes how the Company handles personal and other information of users in connection with the Service and related websites.
+
+---
+
+## 1. Company Information and Contact
+
+* Company Name: Cinnon Inc.
+* Address: Fukuoka Growth Next 2F, 2-6-11 Daimyo, Chuo-ku, Fukuoka 810-0041, Japan
+* Contact: E-mail: [ci@cinnon.co.jp](mailto:ci@cinnon.co.jp)
+
+---
+
+## 2. Scope
+
+This Policy applies to the iOS/Android applications, web applications, and the official website ([https://todohabit.app](https://todohabit.app)). For links to external services, the privacy policies of those services apply.
+
+---
+
+## 3. Information We Collect
+
+We collect the following categories of information as necessary to provide and operate the Service.
+
+### 3.1 Account Information
+
+* Email address, display name, profile icon (optional)
+* External authentication IDs (e.g., Sign in with Apple/Google identifiers)
+
+### 3.2 Content and Usage Information
+
+* Tasks, routines (habits), check status, notes, due dates, recurrence settings, starred/priority settings, maximum absence days/streak data, and other progress data
+* Usage date/time, activity logs, notification settings, app navigation history
+
+### 3.3 Device and Technical Information
+
+* Device type, OS/app version, language/time zone, IP address (short-term retention), identifiers required for app operation
+* Crash logs, performance metrics, diagnostic data
+
+### 3.4 Purchase Information
+
+* Subscription or purchase history (payments are processed by Apple/Google; the Company does not store credit card numbers)
+
+### 3.5 Contact and Support Information
+
+* Inquiry details, attached files, communication history
+
+### 3.6 Website Cookies
+
+* Essential Cookies: session management, security
+* Analytics Cookies: usage analysis and quality improvement (consent will be obtained where required)
+
+### 3.7 Device Permissions
+
+* Notifications: for reminders
+* Calendar or external integrations: only after explicit user permission; if denied, related features will not function
+
+---
+
+## 4. Purpose of Use
+
+Collected information is used for:
+
+1. Providing the Service, user authentication, synchronization, backup, reminders/notifications
+2. Recording tasks/habits, displaying statistics, and other core features
+3. Responding to inquiries, sending important notices, informing users of policy or terms updates
+4. Preventing misuse, troubleshooting, ensuring security, improving quality, and conducting research
+5. Responding to violations of terms, complying with legal or governmental requests
+6. Managing billing, refunds, and purchase verification
+7. Product improvement through analytics or A/B testing (with user consent where required)
+
+---
+
+## 5. Legal Basis (for GDPR and similar laws)
+
+* Contract performance (account, sync, notifications)
+* Legitimate interests (fraud prevention, service improvement, basic analytics)
+* Consent (analytics cookies, optional integrations, marketing emails; consent can be withdrawn at any time)
+* Legal obligations
+
+---
+
+## 6. Sharing with Third Parties
+
+We do not share personal data with third parties except:
+
+* With user consent
+* When required by law or necessary to protect life, body, or property
+* In the case of a business succession (merger, acquisition, etc.)
+
+We do not sell personal data or share it with advertising networks.
+
+---
+
+## 7. Outsourcing
+
+We may outsource processing (cloud hosting, analytics, email delivery, customer support) to service providers under appropriate agreements. Providers only handle information within the necessary scope.
+
+---
+
+## 8. International Data Transfer
+
+Data may be stored or processed outside Japan. Appropriate safeguards (e.g., standard contractual clauses) will be applied as required by law.
+
+---
+
+## 9. Joint Use
+
+We currently do not engage in joint use of personal data.
+
+---
+
+## 10. Tracking and Advertising
+
+We do not use cross-app or cross-site tracking for advertising purposes. If we introduce such practices, this Policy will be updated and user consent will be obtained.
+
+---
+
+## 11. Data Retention
+
+We retain personal data for as long as necessary to fulfill the purposes described, comply with legal requirements, or until a user requests deletion. Data no longer required will be securely deleted or anonymized.
+
+---
+
+## 12. Security
+
+* Encrypted communication (TLS)
+* Encryption of stored data where applicable
+* Access control, least-privilege access, audit logs
+* Backups and redundancy
+* Vendor oversight and vulnerability management
+
+---
+
+## 13. User Rights
+
+Depending on applicable law, users have rights to:
+
+* Access their data
+* Request corrections or deletions
+* Restrict or object to processing
+* Data portability (receive data in machine-readable form)
+* Withdraw consent
+
+Requests may be sent to the contact above. We will respond within a reasonable timeframe.
+
+---
+
+## 14. Account and Data Deletion
+
+* Users may delete accounts via in-app settings, after which data will be deleted promptly or after a limited delay (backups may persist temporarily).
+* Alternatively, send an email request to [ci@cinnon.co.jp](mailto:ci@cinnon.co.jp) with the subject “Account Deletion Request.” Data will be deleted after identity verification.
+
+---
+
+## 15. Children’s Privacy
+
+The Service is not intended for users under 13 years of age (or the equivalent age in their jurisdiction). If we discover that we have collected data from such users, we will promptly delete it.
+
+---
+
+## 16. Website Cookies (Details)
+
+* **Essential Cookies**: login, security, form protection (cannot be disabled)
+* **Analytics Cookies**: usage tracking and improvement (can be disabled via consent banner)
+* Disabling cookies in the browser may limit certain features.
+
+---
+
+## 17. “Sale” or “Sharing” of Personal Data (CCPA/CPRA)
+
+We do not “sell” or “share” personal data under California law, nor disclose data for targeted advertising.
+
+---
+
+## 18. Policy Updates
+
+We may update this Policy as necessary. For significant changes, we will notify users via the app or website. Continued use of the Service constitutes acceptance of the updated Policy.
+
+---
+
+## 19. Language
+
+This Policy is written in Japanese as the official version. An English translation may be provided for reference; in case of discrepancy, the Japanese version prevails.
+
+---
+
+### App Store / Store Listing Data Handling
+
+**Data Linked to Users**
+
+* Contact info (email address)
+* Identifiers (user ID, external auth ID)
+* Usage data (activity, diagnostics, crashes)
+* Content (tasks, routines, notes, settings, statistics)
+
+**Purpose**: app functionality, analytics, improvement, support
+**Tracking**: no cross-app or cross-site tracking
