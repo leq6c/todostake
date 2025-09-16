@@ -25,6 +25,7 @@ import { CombinedMain } from "@/components/combined-main"
 import { HomeDex } from "@/components/home-dex"
 import { useProfile } from "@/hooks/use-profile"
 import AnimatedBackground from "@/components/ui/animated-background"
+import { useIsTablet } from "@/hooks/use-tablet"
 
 export interface TodoAppMainProps {
   floatingMode?: boolean
@@ -57,6 +58,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
   const panelStartYRef = useRef<number | null>(null)
   const draggingRef = useRef(false)
   const RIGHT_PANEL_WIDTH = 320
+  const isTablet = useIsTablet()
 
   const selectionState = useSelectionState({
     selectedTodo: appState.selectedTodo,
@@ -401,7 +403,8 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
           className={`flex-1 flex h-full pr-safe ${
             uiState.rightPanelOpen &&
             appState.activeList !== "home" &&
-            (appState.selectedTodo || appState.selectedRoutineId)
+            (appState.selectedTodo || appState.selectedRoutineId) && 
+            !isTablet
               ? "md:mr-80"
               : ""
           }`}
