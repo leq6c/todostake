@@ -139,11 +139,11 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-sm p-6 space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-0">
             <LogIn className="h-5 w-5" />
             <h1 className="text-lg font-semibold">Sign in to continue</h1>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-0">
             Your todos are securely synced and available offline.
           </p>
           <div className="space-y-3">
@@ -162,6 +162,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <Button
+              size="lg"
               className="w-full mb-0"
               onClick={async () => {
                 try {
@@ -203,7 +204,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
               </button>
             )}
             <div className="text-xs text-muted-foreground text-center">Or</div>
-            <Button className="w-full" onClick={async () => {
+            <Button size="lg" className="w-full" onClick={async () => {
               try {
                 await signInWithGoogle()
               } catch (e: any) {
@@ -212,7 +213,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
             }}>
               Continue with Google
             </Button>
-            <Button variant="outline" className="w-full" onClick={async () => {
+            <Button size="lg" variant="outline" className="w-full" onClick={async () => {
               try {
                 await signInGuest()
               } catch (e: any) {
