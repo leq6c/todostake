@@ -12,13 +12,19 @@ export default function LandingPage() {
         "min-h-screen w-full bg-[radial-gradient(circle_at_20%_10%,rgba(99,102,241,0.08),transparent_60%),radial-gradient(circle_at_80%_90%,rgba(56,189,248,0.08),transparent_60%)] flex items-center justify-center p-3 md:p-6"
       }
     >
+      <div className="absolute inset-0 w-full h-full z-[-1]" style={{
+          backgroundImage: "url(/bg.png)",
+          backgroundPosition: "left -120px bottom 0",
+          opacity: 0.4,
+        }}>
+      </div>
       <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto text-center">
         <div className="flex flex-col items-center gap-2">
           <div className="text-4xl font-medium">TodoHabit</div>
-          <div className="text-lg text-muted-foreground">Keep your word or lose your stake.</div>
+          <div className="text-lg text-muted-foreground">Pure focus. Clean design.</div>
           <p className="text-sm text-muted-foreground mt-2 max-w-lg">
-            Stake tokens on your tasks and routines. Complete them to get your stake back, or lose it if you
-            don't. Prove completion by chatting with AI.
+            TodoHabit brings tasks and routines together in one clean, calming list.
+Make a rule, then follow it—whether you feel like it or not.
           </p>
         </div>
 
@@ -26,7 +32,7 @@ export default function LandingPage() {
           Enter Web App
         </Button>
 
-        <div className="flex flex-col items-center gap-4 mt-2">
+        <div className="flex flex-col items-center gap-4 mt-2 hidden">
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-md">
             <Button

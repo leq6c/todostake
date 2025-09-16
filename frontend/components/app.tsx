@@ -141,6 +141,19 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-sm p-6 space-y-4">
+          {uiState.isMobile && <div className="absolute inset-0 w-full h-full z-[-1]" style={{
+          backgroundImage: "url(/bg.png)",
+          backgroundPosition: "left 50%",
+          opacity: 0.3,
+        }}>
+        </div>}
+
+        {!uiState.isMobile && <div className="absolute inset-0 w-full h-full z-[-1]" style={{
+          backgroundImage: "url(/bg.png)",
+          backgroundPosition: "right -440px bottom 0px",
+          opacity: 0.1,
+        }}>
+        </div>}
           <div className="flex items-center gap-2 mb-0">
             <LogIn className="h-5 w-5" />
             <h1 className="text-lg font-semibold">Sign in to continue</h1>
@@ -317,7 +330,14 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
         {uiState.isMobile && <div className="absolute inset-0 w-full h-full" style={{
           backgroundImage: "url(/bg.png)",
           backgroundPosition: "left 50%",
-          opacity: 0.4,
+          opacity: 0.3,
+        }}>
+        </div>}
+
+        {!uiState.isMobile && <div className="absolute inset-0 w-full h-full" style={{
+          backgroundImage: "url(/bg.png)",
+          backgroundPosition: "right -440px bottom 0px",
+          opacity: 0.1,
         }}>
         </div>}
 
