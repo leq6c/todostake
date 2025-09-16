@@ -10,6 +10,7 @@ import { useTheme } from "@/components/theme-provider"
 import { useModal } from "@/components/providers/modal-provider"
 import type { TodoCounts } from "@/types"
 import { useAuth } from "@/hooks/use-auth"
+import { useProfile } from "@/hooks/use-profile"
 
 interface TodoSidebarProps {
   activeList: string
@@ -29,6 +30,7 @@ export function TodoSidebar({
   const [mounted, setMounted] = useState(false)
   const { user } = useAuth()
   const [lastTouchTime, setLastTouchTime] = useState<number | null>(null)
+  const { profile } = useProfile()
 
   useEffect(() => {
     setMounted(true)
@@ -67,6 +69,8 @@ export function TodoSidebar({
     { id: "tasks", name: "All Tasks", icon: List, count: todoCounts.tasks },
   ]
 
+  console.log(profile);
+
   return (
     <div className="w-full bg-sidebar border-r border-sidebar-border/70 flex flex-col h-full pl-safe">
       {/* User Profile */}
@@ -78,11 +82,11 @@ export function TodoSidebar({
         >
           <Avatar className="h-10 w-10 md:h-8 md:w-8">
             <AvatarFallback className="bg-foreground text-background font-medium text-base md:text-sm">
-              {(user?.displayName || user?.email || "U").slice(0, 2).toUpperCase()}
+              {(profile?.name || user?.displayName || user?.email || "U").slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sidebar-foreground truncate text-base md:text-sm">{user?.displayName || (user?.isAnonymous ? "Guest" : "User")}</p>
+            <p className="font-medium text-sidebar-foreground truncate text-base md:text-sm">{profile?.name || user?.displayName || (user?.isAnonymous ? "Guest" : "User")}</p>
             <p className="text-sm md:text-xs text-muted-foreground truncate">{user?.isAnonymous ? "Guest" : user?.email || "Signed in"}</p>
           </div>
         </div>

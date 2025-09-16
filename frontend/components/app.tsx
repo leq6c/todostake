@@ -162,7 +162,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <Button
-              className="w-full"
+              className="w-full mb-0"
               onClick={async () => {
                 try {
                   if (isSignUp) {
@@ -179,6 +179,12 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
             >
               {isSignUp ? "Create account" : "Sign in"}
             </Button>
+            <button
+              className="text-xs text-muted-foreground hover:underline w-full text-center"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp ? "Have an account? Sign in" : "New here? Create an account"}
+            </button>
             {!isSignUp && (
               <button
                 className="text-xs text-muted-foreground hover:underline text-left hidden"
@@ -215,12 +221,6 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
             }}>
               Continue as guest
             </Button>
-            <button
-              className="text-xs text-muted-foreground hover:underline w-full text-center hidden"
-              onClick={() => setIsSignUp(!isSignUp)}
-            >
-              {isSignUp ? "Have an account? Sign in" : "New here? Create an account"}
-            </button>
           </div>
         </Card>
       </div>
