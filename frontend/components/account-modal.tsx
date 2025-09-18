@@ -9,11 +9,13 @@ import { Separator } from "@/components/ui/separator"
 import { LogOut, User, Shield, Key, Wallet, Copy, ExternalLink, Monitor } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useProfile } from "@/hooks/use-profile"
+import { useModal } from "@/components/providers/modal-provider"
+import { toast } from "@/hooks/use-toast"
 
 type AccountModalProps = {}
 
 export function AccountModal() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, deleteAccount } = useAuth()
   const { profile, updateProfile } = useProfile()
   const [name, setName] = useState("")
   const email = useMemo(() => profile?.email || user?.email || (user?.isAnonymous ? "Guest" : ""), [profile, user])
@@ -21,6 +23,7 @@ export function AccountModal() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [walletConnected, setWalletConnected] = useState(false)
   const [walletAddress] = useState("")
+  const { showModal, hideModal } = useModal()
   
   // Sync local name with profile
   useEffect(() => {
@@ -73,6 +76,43 @@ export function AccountModal() {
               Email
             </Label>
             <Input id="email" value={email} disabled className="text-sm h-8 bg-muted" />
+          </div>
+
+          {/* Account Operation Section */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-black">Account operation</h4>
+            <Button
+              size="sm"
+              variant="link"
+              className="h-auto px-0 text-sm ml-2"
+              onClick={() => {
+                // Hide the account modal and show a confirmation
+                hideModal()
+                showModal({
+                  type: "confirmation",
+                  position: { x: 0, y: 0 },
+                  arrowPosition: "right-top",
+                  data: {
+                    title: "Delete Account",
+                    description:
+                      "This will permanently delete your account and remove associated data. This action cannot be undone.",
+                    cancelText: "Cancel",
+                    confirmText: "Delete",
+                    onConfirm: async () => {
+                      try {
+                        await deleteAccount()
+                        toast({ title: "Account deleted" })
+                      } catch (e: any) {
+                        const msg = e?.message || "Failed to delete account"
+                        toast({ title: "Could not delete account", description: msg })
+                      }
+                    },
+                  },
+                })
+              }}
+            >
+              Delete account
+            </Button>
           </div>
         </div>
       </div>
@@ -199,6 +239,7 @@ export function AccountModal() {
           <LogOut className="h-4 w-4" />
           Sign Out
         </Button>
+
       </div>
     </div>
   )

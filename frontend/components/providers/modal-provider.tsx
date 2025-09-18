@@ -236,19 +236,8 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     <ModalContext.Provider value={{ showModal, hideModal, isModalOpen: !!modalConfig }}>
       {children}
       {modalConfig && (
-        // If floatingWindowMode is unset or true, use floating bubble modal; otherwise use full-screen overlay
-        (profile?.floatingWindowMode ?? true) ? (
-          <GenericBubbleModal
-            isOpen={true}
-            onClose={hideModal}
-            position={modalConfig.position}
-            arrowPosition={modalConfig.arrowPosition}
-            width="w-96"
-            height="h-auto"
-          >
-            {renderModalContent()}
-          </GenericBubbleModal>
-        ) : (
+        // Use full-screen overlay for confirmations (more reliable visibility)
+        (modalConfig.type === "confirmation" || !(profile?.floatingWindowMode ?? true)) ? (
           <>
             <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={hideModal} />
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -262,6 +251,17 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
               </div>
             </div>
           </>
+        ) : (
+          <GenericBubbleModal
+            isOpen={true}
+            onClose={hideModal}
+            position={modalConfig.position}
+            arrowPosition={modalConfig.arrowPosition}
+            width="w-96"
+            height="h-auto"
+          >
+            {renderModalContent()}
+          </GenericBubbleModal>
         )
       )}
     </ModalContext.Provider>

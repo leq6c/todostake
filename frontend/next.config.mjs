@@ -10,7 +10,7 @@ const nextConfig = {
     unoptimized: true,
   },
   output: "export",
-  productionBrowserSourceMaps: false, // make this true if you want to debug the app with the production build
+  productionBrowserSourceMaps: true, // make this true if you want to debug the app with the production build
 }
 
 export default nextConfig
