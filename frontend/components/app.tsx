@@ -156,7 +156,7 @@ export default function TodoAppMain(props?: TodoAppMainProps) {
         </div>}
           <div className="flex items-center gap-2 mb-0">
             <LogIn className="h-5 w-5" />
-            <h1 className="text-lg font-semibold">Sign in to continue</h1>
+            <h1 className="text-lg font-semibold">Sign in to continue...</h1>
           </div>
           <p className="text-sm text-muted-foreground mb-0">
             Your todos are securely synced and available offline.

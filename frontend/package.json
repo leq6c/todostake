@@ -10,6 +10,7 @@
     "ios": "NEXT_APP_MODE=native npm run build && npx cap sync"
   },
   "dependencies": {
+    "@capacitor-community/electron": "^5.0.1",
     "@capacitor-firebase/app": "^7.3.1",
     "@capacitor-firebase/authentication": "^7.3.1",
     "@capacitor-firebase/firestore": "^7.3.1",

@@ -15,8 +15,17 @@ import {
   updateProfile,
   type User,
   getAuth,
+  deleteUser as firebaseDeleteUser,
 } from "firebase/auth";
 import { Preferences } from "@capacitor/preferences";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  doc as fsDoc,
+  getDocs,
+  writeBatch,
+} from "firebase/firestore";
+import { FirebaseFirestore } from "@capacitor-firebase/firestore";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -154,13 +163,17 @@ export function useAuth() {
   }, []);
 
   const signInGuest = useCallback(async () => {
+    console.log("====signInGuest");
     setError(null);
     if (Capacitor.isNativePlatform()) {
+      console.log("====signInGuest native");
       const result = await FirebaseAuthentication.signInAnonymously();
+      console.log("====signInGuest native result", result);
       if (result.user) {
         setUser(result.user as unknown as User);
       }
     } else {
+      console.log("====signInGuest web");
       await signInAnonymously(auth);
     }
   }, []);
@@ -227,6 +240,104 @@ export function useAuth() {
     }
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    setError(null);
+    try {
+      // Delete Firestore data first while user is still authenticated
+      const uid = auth.currentUser?.uid || (user as any)?.uid;
+      if (!uid) throw new Error("Not signed in");
+
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const operations: any[] = [];
+          const colPaths = [
+            `users/${uid}/todos`,
+            `users/${uid}/lists`,
+            `users/${uid}/routines`,
+            `users/${uid}/metrics/current/history`,
+          ];
+          for (const p of colPaths) {
+            const res = await FirebaseFirestore.getCollection({ reference: p });
+            for (const s of res?.snapshots ?? []) {
+              operations.push({ type: "delete", reference: s.path });
+            }
+          }
+          // Delete single docs
+          operations.push({
+            type: "delete",
+            reference: `users/${uid}/metrics/current`,
+          });
+          operations.push({
+            type: "delete",
+            reference: `users/${uid}/profile/main`,
+          });
+          if (operations.length) {
+            await FirebaseFirestore.writeBatch({ operations });
+          }
+        } catch (e) {
+          // proceed even if data cleanup fails; account deletion continues
+        }
+      } else {
+        try {
+          const batch = writeBatch(db);
+          const todosSnap = await getDocs(
+            collection(db, "users", uid, "todos")
+          );
+          todosSnap.forEach((d) => batch.delete(d.ref));
+          const listsSnap = await getDocs(
+            collection(db, "users", uid, "lists")
+          );
+          listsSnap.forEach((d) => batch.delete(d.ref));
+          const routinesSnap = await getDocs(
+            collection(db, "users", uid, "routines")
+          );
+          routinesSnap.forEach((d) => batch.delete(d.ref));
+          const histSnap = await getDocs(
+            collection(db, "users", uid, "metrics", "current", "history")
+          );
+          histSnap.forEach((d) => batch.delete(d.ref));
+          batch.delete(fsDoc(db, "users", uid, "metrics", "current"));
+          batch.delete(fsDoc(db, "users", uid, "profile", "main"));
+          await batch.commit();
+        } catch (e) {
+          // proceed even if data cleanup fails
+        }
+      }
+
+      // Delete Auth user last
+      if (
+        Capacitor.isNativePlatform() &&
+        (FirebaseAuthentication as any)?.deleteUser
+      ) {
+        // Prefer native deletion when available
+        await FirebaseAuthentication.deleteUser();
+      } else {
+        const current = auth.currentUser;
+        if (!current) throw new Error("Not signed in");
+        await firebaseDeleteUser(current);
+      }
+      try {
+        // Clean up any cached user state
+        if (Capacitor.isNativePlatform()) {
+          await Preferences.remove({ key: "wb:lastUser" });
+        } else {
+          localStorage.removeItem("wb:lastUser");
+          try {
+            // Clear local caches for this user if present
+            if (uid) {
+              localStorage.removeItem(`wb:cache:${uid}:todos`);
+              localStorage.removeItem(`wb:cache:${uid}:lists`);
+            }
+          } catch {}
+        }
+      } catch {}
+    } catch (e: any) {
+      const msg = e?.message || "Failed to delete account";
+      setError(msg);
+      throw e;
+    }
+  }, []);
+
   return {
     user,
     loading,
@@ -237,5 +348,6 @@ export function useAuth() {
     signUpWithEmail,
     signInWithEmail,
     resetPassword,
+    deleteAccount,
   };
 }
